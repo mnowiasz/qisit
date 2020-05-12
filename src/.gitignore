@@ -1,0 +1,4 @@
+/venv/
+/.idea/
+/virtualenv/
+__pycache__/

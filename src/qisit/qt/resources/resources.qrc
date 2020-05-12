@@ -1,0 +1,50 @@
+<!--
+  ~ Copyright (c) 2020 by Mark Nowiasz
+  ~
+  ~ This file is part of Qisit (https://github.com/mnowiasz/qisit)
+  ~
+  ~ Qisit is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Qisit is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~  along with qisit.  If not, see <https://www.gnu.org/licenses/>.
+  -->
+
+<RCC>
+  <qresource>
+    <file>logos/gplv3-88x31.png</file>
+    <file>logos/gplv3-127x51.png</file>
+    <file>logos/qisit_128x128.png</file>
+    <file>icons/qisit_24x24.png</file>
+    <file>icons/calculator.png</file>
+    <file>icons/plus.png</file>
+    <file>icons/minus.png</file>
+    <file>icons/disk.png</file>
+    <file>icons/arrow-return-180-left.png</file>
+    <file>icons/lock.png</file>
+    <file>icons/lock-unlock.png</file>
+    <file>icons/image-32.png</file>
+    <file>icons/bread.png</file>
+    <file>icons/calendar-day.png</file>
+    <file>icons/cards-stack.png</file>
+    <file>icons/clock.png</file>
+    <file>icons/cross.png</file>
+    <file>icons/cutleries.png</file>
+    <file>icons/external.png</file>
+    <file>icons/picture.png</file>
+    <file>icons/plates.png</file>
+    <file>icons/quill.png</file>
+    <file>icons/star.png</file>
+    <file>icons/document-page.png</file>
+    <file>icons/document-page-last.png</file>
+    <file>icons/document-page-next.png</file>
+    <file>icons/document-page-previous.png</file>
+  </qresource>
+</RCC>
