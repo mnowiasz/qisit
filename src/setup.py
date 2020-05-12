@@ -10,7 +10,7 @@ setup(
     url='',
     license='GPL 3.0',
     author='Mark Nowiasz',
-    author_email='nowiasz@gmail.com',
+    author_email='nowiasz+qisit@gmail.com',
     description='Test version',
     install_requires=[
         'babel >= 2.7.0',
