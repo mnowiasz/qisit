@@ -1,22 +1,5 @@
 # -*- coding: utf-8 -*-
 
-#  Copyright (c) 2020 by Mark Nowiasz
-#
-#  This file is part of Qisit (https://github.com/mnowiasz/qisit)
-#
-#  Qisit is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  Qisit is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
-
 # Form implementation generated from reading ui file 'recipe.ui'
 #
 # Created by: PyQt5 UI code generator 5.14.2
@@ -519,7 +502,7 @@ class Ui_RecipeWindow(object):
         self.alternativeCheckBox.setObjectName("alternativeCheckBox")
         self.ingredientButtonLayout.addWidget(self.alternativeCheckBox)
         self.ingredientLayout.addLayout(self.ingredientButtonLayout)
-        self.ingredientTreeView = QtWidgets.QTreeView(self.layoutWidget2)
+        self.ingredientTreeView = DraggingTreeView(self.layoutWidget2)
         self.ingredientTreeView.setAcceptDrops(True)
         self.ingredientTreeView.setDragEnabled(True)
         self.ingredientTreeView.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
@@ -674,4 +657,5 @@ class Ui_RecipeWindow(object):
         self.actionDelete_Image_s.setText(_translate("RecipeWindow", "Delete Image(s)"))
         self.actionAdd_Image_s.setText(_translate("RecipeWindow", "Add Image(s)"))
 from qisit.qt.recipewindow.amount_editor_controller import AmountEditor
-from qisit.qt.resources import resources_rc
+from qisit.qt.recipewindow.draggingtreeview import DraggingTreeView
+import qisit.qt.resources.resources_rc

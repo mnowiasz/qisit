@@ -460,8 +460,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         new_recipe = data.Recipe(title=title)
         self._session.add(new_recipe)
-        self._session.merge(new_recipe)
-
+        self._session.commit()
         self.modified = True
 
         new_recipe_id = new_recipe.id
