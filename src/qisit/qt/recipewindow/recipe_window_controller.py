@@ -654,6 +654,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         for combobox in (self.authorComboBox, self.cuisineComboBox, self.yieldsComboBox):
             combobox.currentIndexChanged[int].connect(
                 lambda index, widget=combobox: self.recipe_comboboxes_currentIndexChanged(index, combobox=widget))
+            combobox.currentTextChanged.connect(lambda text: self.set_modified())
 
         # -------------------- Actions --------------------
         for action, slot in ((self.actionAdd_Image_s, self.actionAdd_Image_s_triggered),
@@ -898,8 +899,17 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         """
         if not self._transaction_started:
-            raise ValueError("No transaction raised")
+            raise ValueError("No transaction started")
         self._recipe.last_modified = datetime.now()
+
+        # The user might have entered something in the three comboboxes without pressing enter
+        for combobox in (self.authorComboBox, self.cuisineComboBox, self.yieldsComboBox):
+            comboboxtext = nullify(combobox.currentText())
+            if combobox.findText(comboboxtext) == -1:
+                # The text isn't in combobox's model. And addItem automatically will create a new db item
+                combobox.addItem(comboboxtext)
+                # This will cause a signal which in turn will set the recipe's value
+                combobox.setCurrentIndex(combobox.findText(comboboxtext))
 
         if self.recipeTitleLineEdit.isModified():
             self._recipe.title = self.recipeTitleLineEdit.text()
