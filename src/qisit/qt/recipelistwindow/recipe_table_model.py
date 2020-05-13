@@ -173,18 +173,19 @@ class RecipeTableModel(QtCore.QAbstractTableModel):
 
         """
 
+        # Title, database field, string?
         self.__sort_criteria = {
-            self.RecipeColumns.TITLE: data.Recipe.title,
-            self.RecipeColumns.CATEGORIES: db.group_concat(data.Category.name),
-            self.RecipeColumns.CUISINE: data.Cuisine.name,
-            self.RecipeColumns.AUTHOR: data.Author.name,
-            self.RecipeColumns.YIELD: data.Recipe.yields,
-            self.RecipeColumns.RATING: data.Recipe.rating,
-            self.RecipeColumns.PREPARATION_TIME: data.Recipe.preparation_time,
-            self.RecipeColumns.COOK_TIME: data.Recipe.cooking_time,
-            self.RecipeColumns.TOTAL_TIME: data.Recipe.total_time,
-            self.RecipeColumns.LAST_COOKED: data.Recipe.last_cooked,
-            self.RecipeColumns.LAST_MODIFIED: data.Recipe.last_modified
+            self.RecipeColumns.TITLE: (data.Recipe.title, True),
+            self.RecipeColumns.CATEGORIES: (db.group_concat(data.Category.name), True),
+            self.RecipeColumns.CUISINE: (data.Cuisine.name, True),
+            self.RecipeColumns.AUTHOR: (data.Author.name, True),
+            self.RecipeColumns.YIELD: (data.Recipe.yields, False),
+            self.RecipeColumns.RATING: (data.Recipe.rating, False),
+            self.RecipeColumns.PREPARATION_TIME: (data.Recipe.preparation_time, False),
+            self.RecipeColumns.COOK_TIME: (data.Recipe.cooking_time, False),
+            self.RecipeColumns.TOTAL_TIME: (data.Recipe.total_time, False),
+            self.RecipeColumns.LAST_COOKED: (data.Recipe.last_cooked, False),
+            self.RecipeColumns.LAST_MODIFIED: (data.Recipe.last_modified, False)
         }
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
@@ -346,9 +347,11 @@ class RecipeTableModel(QtCore.QAbstractTableModel):
             return
 
         sort_entry = None
-
         if column in self.__sort_criteria:
-            sort_entry = func.lower(self.__sort_criteria[column])
+            crit, is_string = self.__sort_criteria[column]
+            sort_entry = crit
+            if is_string:
+                sort_entry = func.lower(crit)
         else:
             return
 
