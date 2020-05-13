@@ -509,34 +509,19 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
                      parent: QtCore.QModelIndex) -> bool:
 
         self.dataToBeChanged.emit()
-        if parent.isValid():
-            parent_item = self.itemFromIndex(parent)
-
-            if row == -1 and column == -1:
-                # Drop on the item in question
-                for index in self._dragged_indices:
-                    item = self.itemFromIndex(index)
-                    item_row = item.row()
-                    item_parent = item.parent()
-                    if item_parent is None:
-                        item_parent = self.invisibleRootItem()
-                    items = item_parent.takeRow(item_row)
-                    parent_item.appendRow(items)
-
-                self._dragged_indices.clear()
-                self._set_alternatives_text(self.invisibleRootItem().index())
-                return True
 
         dropped = super().dropMimeData(mime_data, action, row, column, parent)
 
-        # If a group has been moved, restore the column spanning
         if dropped:
+            self._set_alternatives_text(self.invisibleRootItem().index())
             current_row = row
+
+            # If a group has been moved, restore the column spanning
             for item in self._dragged_indices:
                 if data.IngredientListEntry.is_group(int(item.data(QtCore.Qt.UserRole))):
                     self.firstColumnSpanned.emit(current_row, self.invisibleRootItem().index())
                 current_row += 1
-
+            self._dragged_indices.clear()
         return dropped
 
     def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...) -> typing.Any:
