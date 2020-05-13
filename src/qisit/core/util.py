@@ -17,8 +17,8 @@
 #  You should have received a copy of the GNU General Public License
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import session
+
 from qisit.core import db
 from qisit.core.db import data
 from qisit.core.db.defaults import load_all
@@ -42,6 +42,21 @@ def nullify(string: str):
     return None
 
 
+def zero_to_none(value: int):
+    """
+    Convenience method. Turns 0 into None
+
+    Args:
+        value (): The value to convert
+
+    Returns:
+
+    """
+    if value == 0:
+        return None
+    return value
+
+
 def initialize_db(my_session: session, load_data: bool = True):
     """
 
@@ -60,8 +75,7 @@ def initialize_db(my_session: session, load_data: bool = True):
 
     # Setup the default ingredient_unit
     unit_group = data.IngredientUnit(name="Internal group unit", cldr=False, factor=None,
-                                        type_=data.IngredientUnit.UnitType.GROUP)
+                                     type_=data.IngredientUnit.UnitType.GROUP)
     my_session.add(unit_group)
     my_session.commit()
     data.IngredientUnit.update_unit_dict(my_session)
-

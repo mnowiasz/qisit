@@ -24,7 +24,7 @@ from sqlalchemy import func, orm
 
 from qisit import translate
 from qisit.core.db import data
-from qisit.core.util import nullify
+from qisit.core.util import nullify, zero_to_none
 from qisit.qt.misc.lstrip_validator import LStripValidator
 from qisit.qt.recipewindow.combobox_model import DBComboBoxModel, UnitComboBoxModel
 from qisit.qt.recipewindow.delegate import AmountDelegate, EditorDelegate
@@ -137,20 +137,6 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         """
         for combobox in (self.yieldsComboBox, self.authorComboBox, self.cuisineComboBox):
             combobox.setEnabled(enabled)
-
-    def _enable_lineedits(self, editable: bool = False):
-        """
-        Sets the line edits readonly (or editable)
-
-        Args:
-            editable ():  editable or not
-
-        Returns:
-
-        """
-        for the_line_edit in (self.recipeTitleLineEdit, self.preparationTimeLineEdit, self.cookingTimeLineEdit,
-                              self.totalTimeLineEdit, self.urlLineEdit):
-            the_line_edit.setReadOnly(not editable)
 
     def _enable_misc_elements(self, enabled: bool = True):
         """
@@ -341,38 +327,41 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         else:
             self.categoriesLineEdit.setText(None)
 
-    def _set_cooking_times(self):
+    def _set_cooking_timeeditors(self):
         """
-        Depending on the editable state, the values in the LineEdits (and InputMasks, etc) are different
+        Fills the time editor with the recipe's values
 
         Returns:
 
         """
 
-        for time_value, time_widget in ((self._recipe.preparation_time, self.preparationTimeLineEdit),
-                                        (self._recipe.cooking_time, self.cookingTimeLineEdit),
-                                        (self._recipe.total_time, self.totalTimeLineEdit)):
+        for time_value, timeeditor in ((self._recipe.preparation_time, self.preparationTimeEditor),
+                                       (self._recipe.cooking_time, self.cookingTimeEditor),
+                                       (self._recipe.total_time, self.totalTimeEditor)):
+            if time_value is None:
+                time_value = 0
+            timeeditor.value = time_value
 
-            timetext = None
-            if self.editable:
-                # When editable the LineEdits have a InputMask: dd:hh:mm.
-                # Days are not uncommon for dishes that need some settling/marinating
-                time_widget.setInputMask("00:00:00")
-                if time_value:
-                    # Don't care about seconds
-                    value = time_value // 60
-                    days = value // (60 * 24)
-                    remainder_hours = value - days * 60 * 24
-                    hours = remainder_hours // 60
-                    minutes = remainder_hours - hours * 60
-                    timetext = f"{days:02}:{hours:02}:{minutes:02}"
-            else:
-                # Let Babel format the time
-                time_widget.setInputMask(None)
-                if time_value:
-                    timetext = format_timedelta(time_value, threshold=2)
+        self._set_cooking_timelineedits()
 
-            time_widget.setText(timetext)
+    def _set_cooking_timelineedits(self):
+        """
+        Formats the times in the time LineEdits accoring to it's brother timeeditors
+
+        Returns:
+
+        """
+
+        for timelineedit, timeeditor in ((self.preparationTimeLineEdit, self.preparationTimeEditor),
+                                         (self.cookingTimeLineEdit, self.cookingTimeEditor),
+                                         (self.totalTimeLineEdit, self.totalTimeEditor)):
+            timevalue = timeeditor.value
+            timestring = None
+
+            if timevalue > 0:
+                timestring = format_timedelta(timevalue, threshold=2)
+
+            timelineedit.setText(timestring)
 
     def _set_image_label(self, image: bytes = None):
         """
@@ -441,6 +430,27 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         # are not visible at this moment anyway. They become visible when in read-only mode.
         if not editable:
             self._load_markdown_textedits()
+
+    def _switch_timeedits(self, editable: bool = False):
+        """
+        Switch the widgets between LineEdits (display) and TimeEditor (edit)
+
+        Args:
+            editable ():
+
+        Returns:
+
+        """
+
+        stacked_index = 0
+        if editable:
+            stacked_index = 1
+
+        for stacked_widget in (self.preparationStackedWidget, self.cookingStackedWidget, self.totalTimeStackedWidget):
+            stacked_widget.setCurrentIndex(stacked_index)
+
+        # The values could have changed
+        self._set_cooking_timelineedits()
 
     def _update_add_ingredients_checkboxes(self):
         """
@@ -581,10 +591,10 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         self.actionEdit.setChecked(editable)
         self._enable_comboboxes(editable)
-        self._enable_lineedits(editable)
         self._enable_misc_elements(editable)
         self._enable_spinboxes(editable)
         self._switch_textedits(editable)
+        self._switch_timeedits(editable)
 
         self.imageTableView.setDragEnabled(editable)
         self.imageTableView.setAcceptDrops(editable)
@@ -596,7 +606,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._ingredient_treeview_model.editable = editable
         self._update_ingredient_widgets()
 
-        self._set_cooking_times()
+        self.urlLineEdit.setReadOnly(not editable)
 
     @property
     def max_image_size(self) -> (int, int):
@@ -749,8 +759,8 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.recipeTitleLineEdit.textEdited.connect(lambda text: self.set_modified())
 
         # -------------------- Time widgets --------------------
-        for time_widget in (self.preparationTimeLineEdit, self.cookingTimeLineEdit, self.totalTimeLineEdit):
-            time_widget.returnPressed.connect(lambda widget=time_widget: self.timeLineEdit_returnPressed(widget))
+        for time_widget in (self.preparationTimeEditor, self.cookingTimeEditor, self.totalTimeEditor):
+            time_widget.valueChanged.connect(lambda value: self.set_modified())
 
         # -------------------- URL group --------------------
         self.urlButton.clicked.connect(self.urlButton_clicked)
@@ -774,8 +784,9 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         """
         # Widgets that emit a unwanted signal when the value is set by the program (and not by the user)
         blocked_widgets = (self.ratingSpinBox, self.lastCookedDateEdit, self.yieldsComboBox, self.authorComboBox,
-                           self.cuisineComboBox, self.yieldsDoubleSpinBox, self.calculateAmountDoubleSpinBox) \
-                          + self._text_edits
+                           self.cuisineComboBox, self.yieldsDoubleSpinBox, self.calculateAmountDoubleSpinBox,
+                           self.preparationTimeEditor, self.cookingTimeEditor, self.totalTimeEditor) + self._text_edits
+
         for widget in blocked_widgets:
             widget.blockSignals(True)
 
@@ -798,7 +809,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._set_category_line_edit()
 
         # -------------------- Cooking times --------------------
-        self._set_cooking_times()
+        self._set_cooking_timeeditors()
 
         # -------------------- Image group --------------------
         self._load_image_group()
@@ -898,11 +909,12 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         Returns:
 
         """
+
         if not self._transaction_started:
             raise ValueError("No transaction started")
         self._recipe.last_modified = datetime.now()
 
-        # The user might have entered something in the three comboboxes without pressing enter
+        # The user might have entered something in the three ComboBoxes without pressing enter
         for combobox in (self.authorComboBox, self.cuisineComboBox, self.yieldsComboBox):
             comboboxtext = nullify(combobox.currentText())
             if combobox.findText(comboboxtext) == -1:
@@ -910,6 +922,10 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
                 combobox.addItem(comboboxtext)
                 # This will cause a signal which in turn will set the recipe's value
                 combobox.setCurrentIndex(combobox.findText(comboboxtext))
+
+        self._recipe.preparation_time = zero_to_none(self.preparationTimeEditor.value)
+        self._recipe.cooking_time = zero_to_none(self.cookingTimeEditor.value)
+        self._recipe.total_time = zero_to_none(self.totalTimeEditor.value)
 
         if self.recipeTitleLineEdit.isModified():
             self._recipe.title = self.recipeTitleLineEdit.text()

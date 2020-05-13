@@ -313,25 +313,6 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="2" colspan="3">
-              <widget class="QLineEdit" name="cookingTimeLineEdit">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                 <horstretch>5</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="readOnly">
-                <bool>false</bool>
-               </property>
-               <property name="placeholderText">
-                <string>Cooking Time</string>
-               </property>
-              </widget>
-             </item>
              <item row="2" column="2">
               <widget class="QDoubleSpinBox" name="yieldsDoubleSpinBox">
                <property name="enabled">
@@ -415,44 +396,6 @@
               <widget class="QLabel" name="cookingTimeLabel">
                <property name="text">
                 <string>Cooking:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="2" colspan="3">
-              <widget class="QLineEdit" name="totalTimeLineEdit">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                 <horstretch>5</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="readOnly">
-                <bool>false</bool>
-               </property>
-               <property name="placeholderText">
-                <string>Total Time</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="2" colspan="3">
-              <widget class="QLineEdit" name="preparationTimeLineEdit">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                 <horstretch>5</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="readOnly">
-                <bool>false</bool>
-               </property>
-               <property name="placeholderText">
-                <string>Preparation time</string>
                </property>
               </widget>
              </item>
@@ -692,6 +635,135 @@
                <property name="value">
                 <number>-1</number>
                </property>
+              </widget>
+             </item>
+             <item row="5" column="2" colspan="3">
+              <widget class="QStackedWidget" name="preparationStackedWidget">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="page">
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <item>
+                  <widget class="QLineEdit" name="preparationTimeLineEdit">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                     <horstretch>5</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Preparation time</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="page_2">
+                <layout class="QVBoxLayout" name="verticalLayout_2">
+                 <item>
+                  <widget class="TimeEditor" name="preparationTimeEditor" native="true"/>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item row="6" column="2" colspan="3">
+              <widget class="QStackedWidget" name="cookingStackedWidget">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="page_3">
+                <layout class="QVBoxLayout" name="verticalLayout_13">
+                 <item>
+                  <widget class="QLineEdit" name="cookingTimeLineEdit">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                     <horstretch>5</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Cooking Time</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="page_4">
+                <layout class="QVBoxLayout" name="verticalLayout_14">
+                 <item>
+                  <widget class="TimeEditor" name="cookingTimeEditor" native="true"/>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item row="7" column="2" colspan="3">
+              <widget class="QStackedWidget" name="totalTimeStackedWidget">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="page_5">
+                <layout class="QVBoxLayout" name="verticalLayout_15">
+                 <item>
+                  <widget class="QLineEdit" name="totalTimeLineEdit">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                     <horstretch>5</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Total Time</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="page_6">
+                <layout class="QVBoxLayout" name="verticalLayout_16">
+                 <item>
+                  <widget class="TimeEditor" name="totalTimeEditor" native="true"/>
+                 </item>
+                </layout>
+               </widget>
               </widget>
              </item>
             </layout>
@@ -1136,13 +1208,19 @@
   <customwidget>
    <class>AmountEditor</class>
    <extends>QWidget</extends>
-   <header>qisit.qt.recipewindow/amount_editor_controller</header>
+   <header>qisit.qt.recipewindow/amounteditor</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>DraggingTreeView</class>
    <extends>QTreeView</extends>
    <header>qisit.qt.recipewindow/draggingtreeview</header>
+  </customwidget>
+  <customwidget>
+   <class>TimeEditor</class>
+   <extends>QWidget</extends>
+   <header>qisit.qt.recipewindow/timeeditor</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -1156,9 +1234,6 @@
   <tabstop>convertYieldsCheckBox</tabstop>
   <tabstop>cuisineComboBox</tabstop>
   <tabstop>authorComboBox</tabstop>
-  <tabstop>preparationTimeLineEdit</tabstop>
-  <tabstop>cookingTimeLineEdit</tabstop>
-  <tabstop>totalTimeLineEdit</tabstop>
   <tabstop>lastCookedDateEdit</tabstop>
   <tabstop>neverCookedCheckBox</tabstop>
   <tabstop>urlLineEdit</tabstop>

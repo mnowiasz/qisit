@@ -20,7 +20,7 @@
 from PyQt5 import Qt, QtCore, QtWidgets
 
 from qisit.core.db import data
-from qisit.qt.recipewindow.amount_editor_controller import AmountEditor
+from qisit.qt.recipewindow.amounteditor import AmountEditor
 
 
 class AmountDelegate(QtWidgets.QStyledItemDelegate):

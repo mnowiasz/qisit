@@ -19,7 +19,7 @@ import typing
 
 import pytest
 
-from qisit.qt.recipewindow.amount_editor_controller import AmountEditor
+from qisit.qt.recipewindow.amounteditor import AmountEditor
 
 
 @pytest.mark.parametrize("test_string, locale, expected, exception_expected", (
