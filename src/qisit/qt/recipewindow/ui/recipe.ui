@@ -437,25 +437,6 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
-              <widget class="QSpinBox" name="ratingSpinBox">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="readOnly">
-                <bool>false</bool>
-               </property>
-               <property name="maximum">
-                <number>10</number>
-               </property>
-              </widget>
-             </item>
              <item row="5" column="2" colspan="3">
               <widget class="QLineEdit" name="preparationTimeLineEdit">
                <property name="enabled">
@@ -629,16 +610,6 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="3" colspan="2">
-              <widget class="QCheckBox" name="unratedCheckBox">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="text">
-                <string>Unrated</string>
-               </property>
-              </widget>
-             </item>
              <item row="9" column="0" colspan="2">
               <widget class="QPushButton" name="urlButton">
                <property name="focusPolicy">
@@ -689,6 +660,37 @@
                </property>
                <property name="insertPolicy">
                 <enum>QComboBox::InsertAlphabetically</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2" colspan="3">
+              <widget class="QSpinBox" name="ratingSpinBox">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="readOnly">
+                <bool>false</bool>
+               </property>
+               <property name="specialValueText">
+                <string>unrated</string>
+               </property>
+               <property name="suffix">
+                <string notr="true">/10</string>
+               </property>
+               <property name="minimum">
+                <number>-1</number>
+               </property>
+               <property name="maximum">
+                <number>10</number>
+               </property>
+               <property name="value">
+                <number>-1</number>
                </property>
               </widget>
              </item>
@@ -1149,7 +1151,6 @@
   <tabstop>mainTabWidget</tabstop>
   <tabstop>categoriesLineEdit</tabstop>
   <tabstop>ratingSpinBox</tabstop>
-  <tabstop>unratedCheckBox</tabstop>
   <tabstop>yieldsDoubleSpinBox</tabstop>
   <tabstop>yieldsComboBox</tabstop>
   <tabstop>convertYieldsCheckBox</tabstop>

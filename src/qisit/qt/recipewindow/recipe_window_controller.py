@@ -163,8 +163,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         """
 
-        for element in (self.actionAdd_Image_s, self.addImagesButton, self.catgoriesButton,
-                        self.unratedCheckBox, self.neverCookedCheckBox):
+        for element in (self.actionAdd_Image_s, self.addImagesButton, self.catgoriesButton, self.neverCookedCheckBox):
             element.setEnabled(enabled)
 
         # If the yield is 0, there's no point in converting the ingredients to a higher value.
@@ -739,7 +738,6 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         # -------------------- Rating group  --------------------
         self.ratingSpinBox.valueChanged.connect(self.ratingSpinBox_valueChanged)
-        self.unratedCheckBox.clicked.connect(self.unratedCheckBox_clicked)
 
         # -------------------- TextEdits (second tab) --------------------
         for the_text_edit in self._text_edits:
@@ -826,12 +824,8 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         # -------------------- Rating --------------------
         if self._recipe.rating:
             self.ratingSpinBox.setValue(self._recipe.rating)
-            self.ratingSpinBox.setEnabled(True)
-            self.unratedCheckBox.setChecked(False)
         else:
-            self.ratingSpinBox.setValue(0)
-            self.ratingSpinBox.setEnabled(False)
-            self.unratedCheckBox.setChecked(True)
+            self.ratingSpinBox.setValue(-1)
 
         # -------------------- TextEdits (second tab) --------------------
         self.descriptionPlainTextEdit.setPlainText(self._recipe.description)
@@ -1453,7 +1447,12 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         Returns:
 
         """
-        self._recipe.rating = value
+
+        # Special value (unrated)
+        if value == -1:
+            self._recipe.rating = None
+        else:
+            self._recipe.rating = value
 
     @_Decorators.change
     def recipe_comboboxes_currentIndexChanged(self, index: int, combobox: QtWidgets.QComboBox):
@@ -1527,24 +1526,6 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
             self._recipe.cooking_time = time_value
         elif time_line_edit == self.totalTimeLineEdit:
             self._recipe.total_time = time_value
-
-    @_Decorators.change
-    def unratedCheckBox_clicked(self, checked: bool):
-        """
-        The recipe should be unrated "
-
-        Args:
-            checked ():
-
-        Returns:
-
-        """
-        if checked:
-            self.ratingSpinBox.setEnabled(False)
-            self.ratingSpinBox.setValue(0)
-            self._recipe.rating = None
-        else:
-            self.ratingSpinBox.setEnabled(True)
 
     def urlButton_clicked(self):
         """
