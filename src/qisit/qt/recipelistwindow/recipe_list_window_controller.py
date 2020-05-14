@@ -350,7 +350,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         self.recipesSlider.valueChanged.connect(self.recipeSlider_valueChanged)
 
         self.update_filters()
-        self.setWindowIcon(QtGui.QIcon(":/icons/qisit_24x24.png"))
+        self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
         self._load_ui_states()
         self._setup_columns_menu()
         self.show()

@@ -406,7 +406,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
             pixmap.loadFromData(the_image.thumbnail)
             self.setWindowIcon(QtGui.QIcon(pixmap))
         else:
-            self.setWindowIcon(QtGui.QIcon(":/icons/qisit_24x24.png"))
+            self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
 
     def _switch_textedits(self, editable: bool = False):
         """
