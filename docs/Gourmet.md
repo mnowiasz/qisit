@@ -45,8 +45,8 @@ when sorting the recipe list. This also makes a "ToDo" category unnecessary.
 Here are two screenshot displaying a recipe with an alternative ingredient:
 ![Recipe front](screenshots/recipefront.png) ![Recipe back](screenshots/recipeback.png)
 
-## Missing/remove features
-* Recipes can't be an ingredient (in Gourmet they can be). There's a much better feature in planning - menus. 
+## Missing/removed features
+* Recipes can't ingredients (in Gourmet they can be). There's a much better feature in planning - menus. 
 This is one of the few cases where Gourmet's data is discarded
 * Nutritional data won't be imported, either. The reason behind this: Those data are old and in an deprecated format 
 not supported any more by the FDA. So there's no point in importing them - as soon as the nutrional feature is 
