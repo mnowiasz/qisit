@@ -18,10 +18,3 @@ want to lose my personal recipe collection I decided to do something about it. M
 port it to Python 3.x, unfortunately that wasn't feasible - it would have taken too much time and a complete rewrite 
 of the code. Since time was an essential factor (deprecation of Python 2.7) I decided to start from scratch with the 
 goal of importing all Gourmet's recipes. 
-
-
-
-
-
-
-
