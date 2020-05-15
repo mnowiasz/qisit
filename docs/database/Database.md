@@ -7,7 +7,7 @@ Table | Purpose
 | [cuisine](../../src/qisit/core/db/data/cuisine.py) | Cuisines for recipes | 
 | [ingredient](../../src/qisit/core/db/data/ingredient.py) | A "generic" ingredient  |
 | [ingredient_list_entry](../../src/qisit/core/db/data/ingredient_list_entry.py) | The ingredients for a recipe |
-| [ingredient_unit](../../src/qisit/core/db/data/ingredient_unit) | A (amount) unit for an ingredient on the recipe's list of ingredients |
+| [ingredient_unit](../../src/qisit/core/db/data/ingredient_unit.py) | A (amount) unit for an ingredient on the recipe's list of ingredients |
 | [meta](../../src/qisit/core/db/data/meta.py) | Meta information, like version |
 | [recipe](../../src/qisit/core/db/data/recipe.py) | Recipes |
 | [recipe_images](../../src/qisit/core/db/data/recipe_image.py) | Images/pictures for a recipe |
