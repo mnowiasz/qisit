@@ -159,6 +159,7 @@
     </property>
     <addaction name="actionSave"/>
     <addaction name="actionRevert"/>
+    <addaction name="actionData_editor"/>
     <addaction name="actionAbout"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -291,6 +292,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>About ...</string>
+   </property>
+  </action>
+  <action name="actionData_editor">
+   <property name="text">
+    <string>Data editor</string>
    </property>
   </action>
  </widget>

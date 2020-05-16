@@ -26,6 +26,7 @@ from qisit.core.db import data
 from qisit.core.util import nullify
 from qisit.importer import gourmetdb
 from qisit.qt.aboutdialog.aboutdialog_controller import AboutdialogController
+from qisit.qt.dataeditor.data_editor_controller import DataEditorController
 from qisit.qt.recipelistwindow.recipe_table_model import RecipeTableModel
 from qisit.qt.recipelistwindow.ui import recipe_list
 from qisit.qt.recipewindow import recipe_window_controller
@@ -53,6 +54,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         self.table_model = RecipeTableModel(session_, recipes_per_page=recipes_per_page)
         self.setupUi(self)
 
+        self._data_editor = None
         self._filter_menus = {}
         self._recipe_windows = {}
 
@@ -288,6 +290,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         # -------------------- Actions --------------------
         self.actionAbout.triggered.connect(self.actionAbout_triggered)
+        self.actionData_editor.triggered.connect(self.actionData_editor_triggered)
         self.actionDelete_Recipe_s.setEnabled(False)
         self.actionDelete_Recipe_s.triggered.connect(self.actionDelete_Recipe_s_triggered)
         self.actionfilterAuthor.setMenu(self._filter_menus[data.Author])
@@ -393,6 +396,21 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         """
         self.recipeTableView.setColumnHidden(column, not checked)
+
+    def actionData_editor_triggered(self, checked: bool = False):
+        """
+        The user selected the data editor
+
+        Args:
+            checked ():  Ignored
+
+        Returns:
+
+        """
+
+        if self._data_editor is None:
+            self._data_editor = DataEditorController(session = self._session)
+        self._data_editor.show()
 
     def actionDelete_Recipe_s_triggered(self, checked: bool = False):
         """

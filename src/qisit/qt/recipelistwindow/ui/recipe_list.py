@@ -146,8 +146,11 @@ class Ui_RecipeListWindow(object):
         self.actionQuit.setObjectName("actionQuit")
         self.actionAbout = QtWidgets.QAction(RecipeListWindow)
         self.actionAbout.setObjectName("actionAbout")
+        self.actionData_editor = QtWidgets.QAction(RecipeListWindow)
+        self.actionData_editor.setObjectName("actionData_editor")
         self.menuQisit.addAction(self.actionSave)
         self.menuQisit.addAction(self.actionRevert)
+        self.menuQisit.addAction(self.actionData_editor)
         self.menuQisit.addAction(self.actionAbout)
         self.menuQisit.addAction(self.actionQuit)
         self.menuImport_2.addAction(self.actionGourmet_DB)
@@ -190,4 +193,5 @@ class Ui_RecipeListWindow(object):
         self.actionDelete_Recipe_s.setText(_translate("RecipeListWindow", "Delete Recipe(s)"))
         self.actionQuit.setText(_translate("RecipeListWindow", "Quit"))
         self.actionAbout.setText(_translate("RecipeListWindow", "About ..."))
+        self.actionData_editor.setText(_translate("RecipeListWindow", "Data editor"))
 from qisit.qt.resources import resources_rc
