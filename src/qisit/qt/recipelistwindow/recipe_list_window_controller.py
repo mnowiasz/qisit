@@ -192,9 +192,9 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         index = self.recipesPerPagecomboBox.findData(self.table_model.recipes_per_page)
         self.recipesPerPagecomboBox.setCurrentIndex(index)
 
-    def _update_filter_menus(self, table: db.Base, parent_action: QtWidgets.QAction):
+    def _update_filter_menu(self, table: db.Base, parent_action: QtWidgets.QAction):
         """
-        Setup / update filter menus for the given table. Assumes that the table has got a property called name and a
+        Setup / update filter menu for the given table. Assumes that the table has got a property called name and a
         list called recipes. Called at startup and whenever a recipe changes (or after an import)
 
         Args:
@@ -368,7 +368,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         for table, action in ((data.Author, self.actionfilterAuthor), (data.Category, self.actionfilterCategories),
                               (data.Cuisine, self.actionfilterCuisine)):
-            self._update_filter_menus(table, action)
+            self._update_filter_menu(table, action)
 
     def actionAbout_triggered(self, checked: bool = False):
         """
