@@ -124,6 +124,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.newIngredientLineEdit.clear()
         self.newIngredientAmountEditor.amountLineEdit.clear()
         self.newIngredientAmountEditor.unitComboBox.setCurrentIndex(0)
+        self.isGroupCheckBox.setChecked(False)
 
     def _enable_comboboxes(self, enabled: bool = True):
         """
@@ -1192,7 +1193,12 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
                                                        name=None)
             self._session.add(new_group_entry)
             self._session.merge(new_group_entry)
+            model_was_empty = treeviewmodel.rowCount() == 0
             treeviewmodel.add_new_group(new_group_entry)
+
+            # The very first append to a model will unhide all columns. This is a workaround to counter it.
+            if model_was_empty:
+                self._restore_ingredient_columns()
         else:
             # A real ingredient
             newingredient_unit = self.newIngredientAmountEditor.unit()

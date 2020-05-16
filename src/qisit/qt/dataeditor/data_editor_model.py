@@ -154,6 +154,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 self._item_parent_row = parent_row
                 self._item_list.clear()
                 the_table = self._first_column[parent_row][0]
+
                 # TODO: Filter Ingredients (no groups)
                 self._item_list = self._session.query(the_table).order_by(the_table.name).all()
             return len(self._item_list)
