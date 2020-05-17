@@ -50,7 +50,8 @@ class Ingredient(db.Base):
 
     recipes = relationship("Recipe", secondary="ingredient_list_entry",
                            primaryjoin="Ingredient.id == IngredientListEntry.ingredient_id",
-                           secondaryjoin="Recipe.id == IngredientListEntry.recipe_id", viewonly=True)
+                           secondaryjoin="Recipe.id == IngredientListEntry.recipe_id", viewonly=True,
+                           order_by="Recipe.title")
     """ All recipes that contain this ingredient """
 
     @classmethod
