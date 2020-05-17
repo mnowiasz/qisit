@@ -19,7 +19,7 @@ import typing
 from enum import IntEnum
 
 from PyQt5 import QtCore, QtGui
-from sqlalchemy import orm
+from sqlalchemy import orm, func
 
 from qisit import translate
 from qisit.core.db import data
@@ -32,7 +32,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         CATEGORIES = 1
         CUISINE = 2
         INGREDIENTS = 3
-        YIELD_UNITS = 4
+        INGREDIENTGROUPS = 4
+        YIELD_UNITS = 5
     ROOTCOLUMN = 0
     ITEMCOLUMN = 1
 
@@ -72,8 +73,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self._first_column = {
             self.FirstColumnRows.AUTHOR: (data.Author, _translate("DataEditor", "Author"), ":/icons/quill.png"),
             self.FirstColumnRows.CATEGORIES: (data.Category, _translate("DataEditor", "Categories"), ":/icons/bread.png"),
-            self.FirstColumnRows.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), None),
             self.FirstColumnRows.CUISINE: (data.Cuisine, _translate("DataEditor", "Cuisine"), ":/icons/cutleries.png"),
+            self.FirstColumnRows.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), None),
+            self.FirstColumnRows.INGREDIENTGROUPS: (data.Ingredient, _translate("DataEditor", "Ingredient Groups"), None),
             self.FirstColumnRows.YIELD_UNITS: (data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
 
@@ -88,7 +90,12 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         if column == self.ROOTCOLUMN:
             count = 0
             if role in (QtCore.Qt.DisplayRole, QtCore.Qt.UserRole):
-                count = self._session.query(self._first_column[row][0]).count()
+                query =  self._session.query(self._first_column[row][0])
+                if row in (self.FirstColumnRows.INGREDIENTS, self.FirstColumnRows.INGREDIENTGROUPS):
+                    group = row == self.FirstColumnRows.INGREDIENTGROUPS
+                    # is False/is True wouldn't work here
+                    query = query.filter(data.Ingredient.is_group == group)
+                count = query.count()
             if role == QtCore.Qt.DisplayRole:
                 text = f"{self._first_column[row][1]} ({count})"
                 return QtCore.QVariant(text)
@@ -100,13 +107,15 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 return QtCore.QVariant(count)
             return QtCore.QVariant()
 
+
         if column == self.ITEMCOLUMN:
-            count = 0
             item = self._item_list[row]
+            count = item.count
             if self._item_parent_row == self.FirstColumnRows.INGREDIENTS:
-                count = len(item.items)
+                pass
             else:
-                count = len(item.recipes)
+                pass
+                #count = len(item.recipes)
             if role == QtCore.Qt.UserRole:
                 return count
             if role == QtCore.Qt.DisplayRole:
@@ -148,15 +157,37 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             return self.FirstColumnRows.YIELD_UNITS + 1
         column = parent.internalId()+1
 
+        # Lazy load the columns
         if column == self.ITEMCOLUMN:
             parent_row = parent.row()
+
+            # Depending on the previous content or the repeated calls of rowCount(), either load the content or
+            # do nothing
             if parent_row != self._item_parent_row:
                 self._item_parent_row = parent_row
                 self._item_list.clear()
                 the_table = self._first_column[parent_row][0]
 
-                # TODO: Filter Ingredients (no groups)
-                self._item_list = self._session.query(the_table).order_by(the_table.name).all()
+                # Construct the query
+                query = None
+                if parent_row in (self.FirstColumnRows.INGREDIENTS, self.FirstColumnRows.INGREDIENTGROUPS):
+                    group = parent_row == self.FirstColumnRows.INGREDIENTGROUPS
+                    query = self._session.query(the_table.name, the_table.id, func.count(data.IngredientListEntry.id).label("count")).join(data.IngredientListEntry, isouter=True).filter(data.Ingredient.is_group == group)
+                else:
+                    query = self._session.query(the_table.name, the_table.id, func.count(data.Recipe.id).label("count"))
+
+                # Categories need an additional join
+                if parent_row == self.FirstColumnRows.CATEGORIES:
+                    query = query.join(data.CategoryList, data.Category.id == data.CategoryList.category_id, isouter=True)
+                if parent_row in (self.FirstColumnRows.AUTHOR, self.FirstColumnRows.CATEGORIES, self.FirstColumnRows.CUISINE, self.FirstColumnRows.YIELD_UNITS):
+                    query = query.join(data.Recipe, isouter=True)
+
+                if parent_row not in (self.FirstColumnRows.INGREDIENTS, ) and False:
+                    self._item_list = self._session.query(the_table.name, the_table.id, func.count(the_table.id).label("count"))\
+                        .join(data.Recipe, isouter=True)\
+                        .group_by(the_table.id).\
+                        order_by(func.lower(the_table.name)).all()
+                self._item_list =  query.group_by(the_table.id).order_by(func.lower(the_table.name)).all()
             return len(self._item_list)
 
         return 0
