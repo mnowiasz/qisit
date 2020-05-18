@@ -26,7 +26,7 @@ from qisit.core.db import data
 
 
 class DataEditorModel(QtCore.QAbstractItemModel):
-    class FirstColumnRows(IntEnum):
+    class RootItems(IntEnum):
         """ Symbolic row names """
         AUTHOR = 0
         CATEGORIES = 1
@@ -42,6 +42,12 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         ITEMS = 1
         REFERENCED = 2
 
+    class FirstColumnData(IntEnum):
+        """ Symbolic names for self:_first_column """
+        TABLE = 0
+        NAME = 1
+        ICON = 2
+
     def __init__(self, session: orm.Session):
 
         super().__init__()
@@ -56,7 +62,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self._parent_row = {}
 
         # Table, Text, Icon.
-
         self._first_column = {}
         self.__setup_first_column()
 
@@ -67,21 +72,19 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # loading
         self._item_parent_rows = [None for column in self.Columns]
 
-        self._bold_font = QtGui.QFont()
-        self._bold_font.setBold(True)
 
     def __setup_first_column(self):
         _translate = translate
         # Table, Item, Icon
         self._first_column = {
-            self.FirstColumnRows.AUTHOR: (data.Author, _translate("DataEditor", "Author"), ":/icons/quill.png"),
-            self.FirstColumnRows.CATEGORIES: (
+            self.RootItems.AUTHOR: (data.Author, _translate("DataEditor", "Author"), ":/icons/quill.png"),
+            self.RootItems.CATEGORIES: (
             data.Category, _translate("DataEditor", "Categories"), ":/icons/bread.png"),
-            self.FirstColumnRows.CUISINE: (data.Cuisine, _translate("DataEditor", "Cuisine"), ":/icons/cutleries.png"),
-            self.FirstColumnRows.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), None),
-            self.FirstColumnRows.INGREDIENTGROUPS: (
+            self.RootItems.CUISINE: (data.Cuisine, _translate("DataEditor", "Cuisine"), ":/icons/cutleries.png"),
+            self.RootItems.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), None),
+            self.RootItems.INGREDIENTGROUPS: (
             data.Ingredient, _translate("DataEditor", "Ingredient Groups"), None),
-            self.FirstColumnRows.YIELD_UNITS: (
+            self.RootItems.YIELD_UNITS: (
             data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
 
@@ -92,24 +95,27 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     def data(self, index: QtCore.QModelIndex, role: int = ...) -> typing.Any:
         column = index.internalId()
         row = index.row()
+        count = 0
         if column == self.Columns.ROOT:
-            count = 0
             if role in (QtCore.Qt.DisplayRole, QtCore.Qt.UserRole):
-                query = self._session.query(self._first_column[row][0])
-                if row in (self.FirstColumnRows.INGREDIENTS, self.FirstColumnRows.INGREDIENTGROUPS):
-                    group = row == self.FirstColumnRows.INGREDIENTGROUPS
+                # Construct a query, i.e. which table to query
+                query = self._session.query(self._first_column[row][self.FirstColumnData.TABLE])
+
+                # Ingredients and ingredientsgroups only differ whether to display ingredients groups
+                # (and no ingredients) or only ingredients (and not groups)
+                if row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS):
+                    group = (row == self.RootItems.INGREDIENTGROUPS)
                     # is False/is True wouldn't work here
                     query = query.filter(data.Ingredient.is_group == group)
                 count = query.count()
-            if role == QtCore.Qt.DisplayRole:
-                text = f"{self._first_column[row][1]} ({count})"
-                return QtCore.QVariant(text)
-            if role == QtCore.Qt.DecorationRole and self._first_column[row][2] is not None:
-                return QtCore.QVariant(QtGui.QIcon(self._first_column[row][2]))
-            # if role == QtCore.Qt.FontRole:
-            #    return QtCore.QVariant(self._bold_font)
-            if role == QtCore.Qt.UserRole:
-                return QtCore.QVariant(count)
+
+                if role == QtCore.Qt.DisplayRole:
+                    text = f"{self._first_column[row][self.FirstColumnData.NAME]} ({count})"
+                    return QtCore.QVariant(text)
+                if role == QtCore.Qt.UserRole:
+                    return QtCore.QVariant(count)
+            if role == QtCore.Qt.DecorationRole and self._first_column[row][self.FirstColumnData.ICON] is not None:
+                return QtCore.QVariant(QtGui.QIcon(self._first_column[row][self.FirstColumnData.ICON]))
             return QtCore.QVariant()
 
         if column == self.Columns.ITEMS:
@@ -125,27 +131,28 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             if role == QtCore.Qt.UserRole:
                 return 0
             if role == QtCore.Qt.DisplayRole:
-                if self._parent_row[self.Columns.ROOT] == self.FirstColumnRows.INGREDIENTS:
+                # Different items have different leaves: Author, Cusine, ... have the recipes' belonging to them
+                # displayed in it's leaf ("referenced") column. Ingredients on the other hand have got
+                # Ingredientlist entries displayed there. Recipes have got a title, all other tables a name (this was
+                # probably an oversight, if a recipe would have a name instead of a title, the code underneath would be
+                # unnecessary). But too much bother to change the database now.
+                if self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS:
                     return QtCore.QVariant(item.name)
                 else:
                     return QtCore.QVariant(item.title)
-            # if role == QtCore.Qt.DecorationRole and self._parent_row[self.Columns.ROOT] != self.FirstColumnRows.INGREDIENTS:
-            #     if len(item.imagelist) >0:
-            #         thumbnail = QtGui.QPixmap()
-            #         thumbnail.loadFromData(item.imagelist[data.RecipeImage.main_image_pos].thumbnail)
-            #         return QtCore.QVariant(thumbnail)
-
         return QtCore.QVariant(None)
 
-    def Qflags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
+    def OFFflags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
+        # Currently disabled, hence the OFF
         return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
     def hasChildren(self, parent: QtCore.QModelIndex = ...) -> bool:
+        # Number of children is stored in the item's user role
         return not parent.isValid() or parent.data(QtCore.Qt.UserRole) > 0
 
     def index(self, row: int, column: int, parent: QtCore.QModelIndex = ...) -> QtCore.QModelIndex:
         if not parent.isValid():
-            # The very first column, the root column
+            # The very first column, the root column. There's only one (model) column, hence the 0
             return self.createIndex(row, 0, self.Columns.ROOT)
         else:
             # The "display" column, *not* the model column
@@ -163,9 +170,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         return self.createIndex(self._parent_row[child_column - 1], 0, child_column - 1)
 
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
-
         if parent.row() == -1:
-            return self.FirstColumnRows.YIELD_UNITS + 1
+            return self.RootItems.YIELD_UNITS + 1
 
         if not self.hasChildren(parent):
             return 0
@@ -181,33 +187,33 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             self._item_lists[column].clear()
 
             if column == self.Columns.ITEMS:
-                self._item_parent_rows[column] = parent_row
-                self._item_lists[column].clear()
-                the_table = self._first_column[parent_row][0]
+                the_table = self._first_column[parent_row][self.FirstColumnData.TABLE]
 
                 # Construct the query
                 query = None
-                if parent_row in (self.FirstColumnRows.INGREDIENTS, self.FirstColumnRows.INGREDIENTGROUPS):
-                    group = parent_row == self.FirstColumnRows.INGREDIENTGROUPS
-                    query = self._session.query(the_table, func.count(data.IngredientListEntry.id).label("count")).join(
-                        data.IngredientListEntry, isouter=True).filter(data.Ingredient.is_group == group)
+                if parent_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS):
+                    group = (parent_row == self.RootItems.INGREDIENTGROUPS)
+                    query = self._session.query(the_table, func.count(data.IngredientListEntry.id).label("count"))\
+                        .join(data.IngredientListEntry, isouter=True).filter(data.Ingredient.is_group == group)
                 else:
                     query = self._session.query(the_table, func.count(data.Recipe.id).label("count"))
 
-                # Categories need an additional join
-                if parent_row == self.FirstColumnRows.CATEGORIES:
-                    query = query.join(data.CategoryList, data.Category.id == data.CategoryList.category_id,
-                                       isouter=True)
-                if parent_row in (
-                self.FirstColumnRows.AUTHOR, self.FirstColumnRows.CATEGORIES, self.FirstColumnRows.CUISINE,
-                self.FirstColumnRows.YIELD_UNITS):
+                    # Categories need an additional join
+                    if parent_row == self.RootItems.CATEGORIES:
+                        query = query.join(data.CategoryList, data.Category.id == data.CategoryList.category_id,
+                                           isouter=True)
                     query = query.join(data.Recipe, isouter=True)
 
                 self._item_lists[column] = query.group_by(the_table.id).order_by(func.lower(the_table.name)).all()
+
             elif column == self.Columns.REFERENCED:
                 item = self._item_lists[self.Columns.ITEMS][parent_row][0]
 
-                if self._parent_row[self.Columns.ROOT] == self.FirstColumnRows.INGREDIENTS:
+                # Copy the lists. Otherwise - when cleared - they would be erased from the
+                # database itself: items/recipes are sqlalchemy lists, very convenient - but changes
+                # there will cause database changes, too, so clearing() such a list will cause the references
+                # to be deleted for real.
+                if self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS:
                     self._item_lists[column] = [ingredient for ingredient in item.items]
                 else:
                     self._item_lists[column] = [recipe for recipe in item.recipes]

@@ -56,5 +56,12 @@ again anyway.
 programms (possibly connected to their smart speakers) so I'm not sure if a separate, disconnected shopping list would 
 really make sense. Maybe using - if available, that is - API calls to (for example) Google Keep would make more sense 
 but I'm open to suggestions
+* Undo/Redo has been replaced by a generic "revert/save"-Feature. A complete undo/redo implementation would be 
+**much** more work. The additional usefulness compared to revert/save would be only marginal. On the other hand, the
+revert/save feature works also on a global level: Before saving you can always revert the whole database
+to it's last saved state.
+* For similar reasons there's no "trashcan" feature like in Gourmet. Would also be *very* complicated, also this feature
+was not exactly reliably working in Gourmet...
+
 
 For a more comprehensive list, take a look at [ToDo](Todo.md)
