@@ -41,7 +41,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         ROOT = 0
         ITEMS = 1
         REFERENCED = 2
-        RECIPES = 3 # Only for ingredients, otherwise REFERENCED is the last column
+        RECIPES = 3  # Only for ingredients, otherwise REFERENCED is the last column
 
     class FirstColumnData(IntEnum):
         """ Symbolic names for self:_first_column """
@@ -73,20 +73,20 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # loading
         self._item_parent_rows = [None for column in self.Columns]
 
-
     def __setup_first_column(self):
         _translate = translate
         # Table, Item, Icon
         self._first_column = {
             self.RootItems.AUTHOR: (data.Author, _translate("DataEditor", "Author"), ":/icons/quill.png"),
             self.RootItems.CATEGORIES: (
-            data.Category, _translate("DataEditor", "Categories"), ":/icons/bread.png"),
+                data.Category, _translate("DataEditor", "Categories"), ":/icons/bread.png"),
             self.RootItems.CUISINE: (data.Cuisine, _translate("DataEditor", "Cuisine"), ":/icons/cutleries.png"),
-            self.RootItems.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), ":/icons/mushroom.png"),
+            self.RootItems.INGREDIENTS: (
+            data.Ingredient, _translate("DataEditor", "Ingredients"), ":/icons/mushroom.png"),
             self.RootItems.INGREDIENTGROUPS: (
-            data.Ingredient, _translate("DataEditor", "Ingredient Groups"), ":/icons/edit-bold.png"),
+                data.Ingredient, _translate("DataEditor", "Ingredient Groups"), ":/icons/edit-bold.png"),
             self.RootItems.YIELD_UNITS: (
-            data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
+                data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
@@ -187,15 +187,20 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         column = parent.internalId() + 1
 
-        # Lazy load the columns
+        # Lazily load the columns. Note: Usually this is done using fetchMore() / canFetchMore. However, since
+        # counting the rows and fetching the data at the same time is more efficient than first counting the rows
+        # and then fetching the data (duplicating the same joins) this is done here
         parent_row = parent.row()
+
         # Depending on the previous content or the repeated calls of rowCount(), either load the content or
         # do nothing
+
         if parent_row != self._item_parent_rows[column]:
 
-            for the_column in range(column, self.Columns.RECIPES+1):
+            # Reset all further columns, otherwise odd things might happen: if the next column has the same parent_row
+            # as before, it wouldn't be reloaded creating odd effects
+            for the_column in range(column + 1, self.Columns.RECIPES + 1):
                 self._item_parent_rows[the_column] = None
-
             self._item_parent_rows[column] = parent_row
 
             if column == self.Columns.ITEMS:
@@ -205,7 +210,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 query = None
                 if parent_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS):
                     group = (parent_row == self.RootItems.INGREDIENTGROUPS)
-                    query = self._session.query(the_table, func.count(data.IngredientListEntry.id).label("count"))\
+                    query = self._session.query(the_table, func.count(data.IngredientListEntry.id).label("count")) \
                         .join(data.IngredientListEntry, isouter=True).filter(data.Ingredient.is_group == group)
                 else:
                     query = self._session.query(the_table, func.count(data.Recipe.id).label("count"))
