@@ -41,6 +41,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         ROOT = 0
         ITEMS = 1
         REFERENCED = 2
+        RECIPES = 3 # Only for ingredients, otherwise REFERENCED is the last column
 
     class FirstColumnData(IntEnum):
         """ Symbolic names for self:_first_column """
@@ -81,9 +82,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             self.RootItems.CATEGORIES: (
             data.Category, _translate("DataEditor", "Categories"), ":/icons/bread.png"),
             self.RootItems.CUISINE: (data.Cuisine, _translate("DataEditor", "Cuisine"), ":/icons/cutleries.png"),
-            self.RootItems.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), None),
+            self.RootItems.INGREDIENTS: (data.Ingredient, _translate("DataEditor", "Ingredients"), ":/icons/mushroom.png"),
             self.RootItems.INGREDIENTGROUPS: (
-            data.Ingredient, _translate("DataEditor", "Ingredient Groups"), None),
+            data.Ingredient, _translate("DataEditor", "Ingredient Groups"), ":/icons/edit-bold.png"),
             self.RootItems.YIELD_UNITS: (
             data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
@@ -129,7 +130,12 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
             if role == QtCore.Qt.UserRole:
-                return 0
+                if self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS:
+                    # Ingredients have a four column
+                    return 1
+                else:
+                    return 0
+
             if role == QtCore.Qt.DisplayRole:
                 # Different items have different leaves: Author, Cusine, ... have the recipes' belonging to them
                 # displayed in it's leaf ("referenced") column. Ingredients on the other hand have got
@@ -140,6 +146,12 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     return QtCore.QVariant(item.name)
                 else:
                     return QtCore.QVariant(item.title)
+        elif column == self.Columns.RECIPES:
+            if role == QtCore.Qt.DisplayRole:
+                recipe = self._item_lists[column][row]
+                return QtCore.QVariant(recipe.title)
+            if role == QtCore.Qt.UserRole:
+                return 0
         return QtCore.QVariant(None)
 
     def OFFflags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
@@ -173,18 +185,14 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         if parent.row() == -1:
             return self.RootItems.YIELD_UNITS + 1
 
-        if not self.hasChildren(parent):
-            return 0
         column = parent.internalId() + 1
 
         # Lazy load the columns
         parent_row = parent.row()
-
         # Depending on the previous content or the repeated calls of rowCount(), either load the content or
         # do nothing
         if parent_row != self._item_parent_rows[column]:
             self._item_parent_rows[column] = parent_row
-            self._item_lists[column].clear()
 
             if column == self.Columns.ITEMS:
                 the_table = self._first_column[parent_row][self.FirstColumnData.TABLE]
@@ -217,6 +225,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     self._item_lists[column] = [ingredient for ingredient in item.items]
                 else:
                     self._item_lists[column] = [recipe for recipe in item.recipes]
+            elif column == self.Columns.RECIPES:
+                recipe = self._item_lists[self.Columns.REFERENCED][parent_row].recipe
+                self._item_lists[column] = [recipe, ]
             else:
                 return 0
 
