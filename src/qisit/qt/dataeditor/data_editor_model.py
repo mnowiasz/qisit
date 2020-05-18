@@ -192,6 +192,10 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # Depending on the previous content or the repeated calls of rowCount(), either load the content or
         # do nothing
         if parent_row != self._item_parent_rows[column]:
+
+            for the_column in range(column, self.Columns.RECIPES+1):
+                self._item_parent_rows[the_column] = None
+
             self._item_parent_rows[column] = parent_row
 
             if column == self.Columns.ITEMS:
