@@ -18,7 +18,7 @@
 import sqlalchemy as sql
 from babel.numbers import format_decimal
 from babel.units import format_unit
-from sqlalchemy.orm import relationship
+from sqlalchemy import orm
 
 from qisit.core import db
 from .ingredient import Ingredient
@@ -99,13 +99,13 @@ class IngredientListEntry(db.Base):
     The second term of the check constraint is used for temporarily renumbering the list - otherwise the unique
     constraint would fire up
     """
-    ingredient = relationship("Ingredient", back_populates="items")
+    ingredient = orm.relationship("Ingredient", back_populates="items")
     """ The (normalized) ingredient """
 
-    recipe = relationship("Recipe", back_populates="ingredientlist")
+    recipe = orm.relationship("Recipe", back_populates="ingredientlist")
     """ The recipe"""
 
-    unit = relationship("IngredientUnit")
+    unit = orm.relationship("IngredientUnit", back_populates="ingredientlist")
     """ The unit for the ingredient list entry"""
 
     GROUP_FACTOR = 1000000

@@ -24,7 +24,8 @@ from sqlalchemy.dialects import mysql
 
 from qisit.core import db
 
-
+# "AmountUnit" probably would have been a better name, but there's no sense in renaming the class/table, issueing
+# database updates and so on.
 class IngredientUnit(db.Base):
     """ A unit for an ingredient  (ml, kg, oz) """
 
@@ -86,6 +87,8 @@ class IngredientUnit(db.Base):
     A dictionary of unit (strings) to IngredientUnit. This dictionary will be a mixture of dynamically created
     items (the units in the user's local) and static items (the custom items stored in the database) 
     """
+
+    ingredientlist = orm.relationship("IngredientListEntry", order_by="IngredientListEntry.name")
 
     @classmethod
     def get_or_add_ingredient_unit_name(cls, session_: sql.orm.session, name: str,

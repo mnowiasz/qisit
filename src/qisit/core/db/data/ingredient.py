@@ -16,8 +16,7 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 import sqlalchemy as sql
-from sqlalchemy.orm import relationship
-
+from sqlalchemy import orm
 from qisit.core import db
 
 
@@ -45,10 +44,10 @@ class Ingredient(db.Base):
     icon = sql.Column(sql.LargeBinary, nullable=True, default=None)
     """ An optional icon for this ingredient group """
 
-    items = relationship("IngredientListEntry", back_populates="ingredient")
+    items = orm.relationship("IngredientListEntry", back_populates="ingredient")
     """ All items referring to this ingredient """
 
-    recipes = relationship("Recipe", secondary="ingredient_list_entry",
+    recipes = orm.relationship("Recipe", secondary="ingredient_list_entry",
                            primaryjoin="Ingredient.id == IngredientListEntry.ingredient_id",
                            secondaryjoin="Recipe.id == IngredientListEntry.recipe_id", viewonly=True,
                            order_by="Recipe.title")
