@@ -21,12 +21,15 @@
     <file>icons/lock-unlock.png</file>
     <file>icons/minus.png</file>
     <file>icons/mushroom.png</file>
+    <file>icons/paper-bag.png</file>
     <file>icons/picture.png</file>
     <file>icons/plates.png</file>
     <file>icons/plus.png</file>
     <file>icons/quill.png</file>
     <file>icons/qisit_24x24.png</file>
     <file>icons/star.png</file>
+    <file>icons/sum.png</file>
+    <file>icons/weight.png</file>
     <file>logos/gplv3-88x31.png</file>
     <file>logos/gplv3-127x51.png</file>
     <file>logos/qisit_128x128.png</file>

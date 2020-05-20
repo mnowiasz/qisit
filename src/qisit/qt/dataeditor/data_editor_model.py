@@ -67,6 +67,14 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self._first_column = {}
         self.__setup_first_column()
 
+        # Icons / ingredient unit types
+        self._ingredient_unit_icons = {
+            data.IngredientUnit.UnitType.MASS:  ":/icons/weight.png",
+            data.IngredientUnit.UnitType.VOLUME: ":/icons/beaker.png",
+            data.IngredientUnit.UnitType.QUANTITY: ":/icons/sum.png",
+            data.IngredientUnit.UnitType.UNSPECIFIC: ":/icons/paper-bag.png"
+        }
+
         # The list of items displayed in the column
         self._item_lists = {column: [] for column in self.Columns}
 
@@ -140,11 +148,12 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     if item[0].cldr:
                         title = f"{item[0].unit_string()} ({count})"
                 return QtCore.QVariant(title)
-            if role == QtCore.Qt.FontRole:
-                # TODO: Display immutable items in a different fond
-                if root_row == self.RootItems.INGREDIENTUNITS:
-                    if item[0].cldr:
-                        return QtCore.QVariant(self._cldr_font)
+            if role == QtCore.Qt.FontRole and root_row == self.RootItems.INGREDIENTUNITS:
+                # TODO: Immutable items should have a different font
+                if item[0].cldr:
+                    return QtCore.QVariant(self._cldr_font)
+            if role == QtCore.Qt.DecorationRole and root_row == self.RootItems.INGREDIENTUNITS:
+                return QtCore.QVariant(QtGui.QIcon(self._ingredient_unit_icons[item[0].type_]))
 
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
