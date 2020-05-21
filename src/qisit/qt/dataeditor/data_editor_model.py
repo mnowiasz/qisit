@@ -128,10 +128,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
     def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
                         parent: QtCore.QModelIndex) -> bool:
-        print(f"ACTION = {action} row = {row} parent= {parent.row()}, column = {parent.internalId()}")
-        index_list = pickle.loads(data.data(self.mime_type))
-        print(index_list)
-        return True
+
+        # Only drops on the Item columns are allowed. And then only dropping directly on an item - the seconds
+        # clause takes care of that. Otherwise it would be possible (at least visibly) to move an item to a leaf above
+        # or beneath another item
+        return parent.internalId() == self.Columns.ITEMS and column < 0
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
         """ There's only one column regardless of the depth of the tree """
@@ -209,7 +210,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             if role in (self.editable_role, self.deletable_role):
                 return True
 
-
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
             if role == QtCore.Qt.UserRole:
@@ -246,11 +246,20 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         return QtCore.QVariant(None)
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
-        # Currently disabled, hence the OFF
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        column = index.internalId()
 
         if index.data(role=self.editable_role):
-            flags |= QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled
+            flags |= QtCore.Qt.ItemIsEditable
+
+            # Only certain combinations of drag&drop make sense: The item column can drag itself on another item
+            # and recipes can be dragged to another author or cuisine. All other combination aren't very useful
+            if column == self.Columns.ITEMS or self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS:
+                flags |= QtCore.Qt.ItemIsDragEnabled
+
+        if column == self.Columns.ITEMS:
+            flags |= QtCore.Qt.ItemIsDropEnabled
+
         return flags
 
     def hasChildren(self, parent: QtCore.QModelIndex = ...) -> bool:
