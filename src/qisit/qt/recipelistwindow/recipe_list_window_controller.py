@@ -19,7 +19,7 @@
 
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 from sqlalchemy import create_engine, exc, func, orm
-
+import typing
 from qisit import translate
 from qisit.core import db
 from qisit.core.db import data
@@ -410,6 +410,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         if self._data_editor is None:
             self._data_editor = DataEditorController(session = self._session)
+            self._data_editor.dataCommited.connect(self.dataeditor_commited)
         self._data_editor.show()
 
     def actionDelete_Recipe_s_triggered(self, checked: bool = False):
@@ -568,6 +569,8 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
                 recipe_window_controller.forced_close()
             self._recipe_windows.clear()
             self._session.rollback()
+            if self._data_editor:
+                self._data_editor.revert_data()
             self.modified = False
             self.update_filters()
             self._reload_model()
@@ -627,6 +630,12 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         self._session.commit()
         self._save_ui_states()
         event.accept()
+
+    def dataeditor_commited(self, affected_recipe_ids: set):
+        print(affected_recipe_ids)
+        self.modified = True
+        self.update_filters()
+        self._reload_model()
 
     def firstPageButton_clicked(self):
         """

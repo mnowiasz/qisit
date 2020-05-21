@@ -24,7 +24,7 @@ from sqlalchemy import orm, func, text
 
 from qisit import translate
 from qisit.core.db import data
-
+from qisit.core.util import nullify
 
 class DataEditorModel(QtCore.QAbstractItemModel):
     class RootItems(IntEnum):
@@ -94,6 +94,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # loading
         self._item_parent_rows = [None for column in self.Columns]
 
+        # Item is a CLDR unit, therefore not editable (the name of the item is generated dymically using the
+        # user's locale
         self._cldr_font = QtGui.QFont()
         self._cldr_font.setItalic(True)
 
@@ -101,6 +103,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self._baseunit_font = QtGui.QFont()
         self._baseunit_font.setBold(True)
         self._baseunit_font.setItalic(True)
+
+        # Recipes that are affected by the changes
+        self.affected_recipe_ids = set()
 
     def __setup_first_column(self):
         _translate = translate
@@ -279,6 +284,16 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
         return self.createIndex(self._parent_row[child_column - 1], 0, child_column - 1)
 
+    def reset(self):
+        """
+        Resets the model to the last state.
+
+        Returns:
+
+        """
+
+        self.affected_recipe_ids.clear()
+
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
         if parent.row() == -1:
             return self.RootItems.YIELD_UNITS + 1
@@ -360,8 +375,37 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         return len(self._item_lists[column])
 
     def setData(self, index: QtCore.QModelIndex, value: typing.Any, role: int = ...) -> bool:
-        root_row = self._parent_row[self.Columns.ROOT]
+        value = nullify(value)
 
+        if value is None:
+            return False
+
+        column = index.internalId()
+        row = index.row()
+        root_row = self._parent_row[self.Columns.ROOT]
+        print(f"index: row = {row}, column = {column}, value={value}, root_row = {root_row}")
+
+        item = self._item_lists[column][row][0]
+
+        # Test if the value already exists
+        the_table = self._first_column[root_row][0]
+        duplicate = self._session.query(the_table).filter(the_table.name==value).first()
+        if duplicate:
+            if duplicate == item:
+                # The same item. Nothing to do here.
+                return False
+            else:
+                # Duplicate item. There three possible ways to deal with this:
+                # 1.) Silently discard the change
+                # 2.) Open a Error dialog telling the user about the problem
+                # 3.) Like in drag&drop, merge both items.
+
+                # Currently: Choice 1.)
+                return False
         self.dataChanged.emit()
-        print(f"index: row = {index.row()}, column = {index.internalId()}, value={value} root={root_row}")
-        return False
+
+        changed_recipes = {recipe.id for recipe in item.recipes}
+        self.affected_recipe_ids = self.affected_recipe_ids.union(changed_recipes)
+        item.name = value
+
+        return True

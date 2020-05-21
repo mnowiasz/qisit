@@ -17,7 +17,7 @@
 
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 from sqlalchemy import create_engine, exc, func, orm
-
+import typing
 from qisit import translate
 from qisit.core import db
 from qisit.core.db import data
@@ -50,6 +50,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                 method(self, *args, **kwargs)
 
             return wrapped
+
+    dataCommited = QtCore.pyqtSignal(set)
+    """ Emitted (including a list/set of affected Recipe IDs) when the data has been committed """
 
     def __init__(self, session : orm.Session):
         super().__init__()
@@ -109,9 +112,10 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         if self._transaction_started:
             self._session.rollback()
-            self._transaction_started = False
-            self.dataColumnView.reset()
-            self.modified = False
+        self._transaction_started = False
+        self._model.reset()
+        self.dataColumnView.reset()
+        self.modified = False
 
     def save_data(self):
         """
@@ -127,6 +131,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._session.commit()
         self.modified = False
         self._transaction_started = False
+        self.dataCommited.emit(self._model.affected_recipe_ids)
+        self._model.affected_recipe_ids.clear()
 
 
     @_Decorators.change

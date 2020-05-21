@@ -94,6 +94,10 @@ class IngredientUnit(db.Base):
 
     ingredientlist = orm.relationship("IngredientListEntry", order_by="IngredientListEntry.name")
 
+    recipes = orm.relationship("Recipe", secondary="ingredient_list_entry",
+                               primaryjoin="IngredientUnit.id == IngredientListEntry.unit_id",
+                               secondaryjoin="Recipe.id == IngredientListEntry.recipe_id", viewonly=True,
+                               order_by="Recipe.title")
     @classmethod
     def get_or_add_ingredient_unit_name(cls, session_: sql.orm.session, name: str,
                                         type_: UnitType = UnitType.QUANTITY):
