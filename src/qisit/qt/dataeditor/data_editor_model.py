@@ -15,8 +15,8 @@
 #  You should have received a copy of the GNU General Public License
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
-import typing
 import pickle
+import typing
 from enum import IntEnum
 
 from PyQt5 import QtCore, QtGui
@@ -25,6 +25,7 @@ from sqlalchemy import orm, func, text
 from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
+
 
 class DataEditorModel(QtCore.QAbstractItemModel):
     class RootItems(IntEnum):
@@ -81,7 +82,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         # Icons / ingredient unit types
         self._ingredient_unit_icons = {
-            data.IngredientUnit.UnitType.MASS:  ":/icons/weight.png",
+            data.IngredientUnit.UnitType.MASS: ":/icons/weight.png",
             data.IngredientUnit.UnitType.VOLUME: ":/icons/beaker.png",
             data.IngredientUnit.UnitType.QUANTITY: ":/icons/sum.png",
             data.IngredientUnit.UnitType.UNSPECIFIC: ":/icons/paper-bag.png"
@@ -125,12 +126,12 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
 
-    def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int, parent: QtCore.QModelIndex) -> bool:
+    def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
+                        parent: QtCore.QModelIndex) -> bool:
         print(f"ACTION = {action} row = {row} parent= {parent.row()}, column = {parent.internalId()}")
         index_list = pickle.loads(data.data(self.mime_type))
         print(index_list)
         return True
-
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
         """ There's only one column regardless of the depth of the tree """
@@ -229,7 +230,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 else:
                     return QtCore.QVariant(item.title)
             if role == self.editable_role:
-                return True
+                return root_row in (
+                    self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTUNITS)
 
         elif column == self.Columns.RECIPES:
             if role == QtCore.Qt.DisplayRole:
@@ -243,16 +245,13 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         return QtCore.QVariant(None)
 
-
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         # Currently disabled, hence the OFF
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
-        if index.data(role= self.editable_role):
+        if index.data(role=self.editable_role):
             flags |= QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled
         return flags
-
-
 
     def hasChildren(self, parent: QtCore.QModelIndex = ...) -> bool:
         # Number of children is stored in the item's user role
@@ -271,7 +270,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     def mimeData(self, indexes: typing.Iterable[QtCore.QModelIndex]) -> QtCore.QMimeData:
         index_list = [(index.row(), index.internalId()) for index in indexes]
 
-        mime_data =QtCore.QMimeData()
+        mime_data = QtCore.QMimeData()
         mime_data.setData(self.mime_type, pickle.dumps(index_list))
         return mime_data
 
@@ -324,10 +323,10 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 if parent_row == self.RootItems.INGREDIENTUNITS:
                     # Ingredients (or better: amount units) are rather special - due to the handling of
                     # CLDR the query has too little in common wit the other ones. There's also the one
-                    # special class for Ingredient Grouos
-                    self._item_lists[column] = self._session.query(the_table, func.count(data.IngredientListEntry.id))\
+                    # special class for Ingredient Groups
+                    self._item_lists[column] = self._session.query(the_table, func.count(data.IngredientListEntry.id)) \
                         .join(data.IngredientListEntry, data.IngredientUnit.id == data.IngredientListEntry.unit_id,
-                              isouter=True).order_by(text('cldr DESC, type_ ASC,  lower(ingredient_unit.name) ASC'))\
+                              isouter=True).order_by(text('cldr DESC, type_ ASC,  lower(ingredient_unit.name) ASC')) \
                         .group_by(the_table.id) \
                         .filter(data.IngredientUnit.type_ != data.IngredientUnit.UnitType.GROUP).all()
                 else:
@@ -383,13 +382,18 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         column = index.internalId()
         row = index.row()
         root_row = self._parent_row[self.Columns.ROOT]
-        print(f"index: row = {row}, column = {column}, value={value}, root_row = {root_row}")
 
-        item = self._item_lists[column][row][0]
+        item = None
+        if column == self.Columns.REFERENCED:
+            item = self._item_lists[self.Columns.REFERENCED][row]
+            changed_recipes = [item.recipe_id, ]
+        else:
+            item = self._item_lists[column][row][0]
+            changed_recipes = [recipe.id for recipe in item.recipes]
 
         # Test if the value already exists
         the_table = self._first_column[root_row][0]
-        duplicate = self._session.query(the_table).filter(the_table.name==value).first()
+        duplicate = self._session.query(the_table).filter(the_table.name == value).first()
         if duplicate:
             if duplicate == item:
                 # The same item. Nothing to do here.
@@ -403,9 +407,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 # Currently: Choice 1.)
                 return False
         self.dataChanged.emit()
-
-        changed_recipes = {recipe.id for recipe in item.recipes}
         self.affected_recipe_ids = self.affected_recipe_ids.union(changed_recipes)
         item.name = value
-
         return True

@@ -632,7 +632,6 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         event.accept()
 
     def dataeditor_commited(self, affected_recipe_ids: set):
-        print(affected_recipe_ids)
         self.modified = True
         self.update_filters()
         self._reload_model()
