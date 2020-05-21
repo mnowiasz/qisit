@@ -607,6 +607,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._ingredient_treeview_model.editable = editable
         self._update_ingredient_widgets()
 
+        self.recipeTitleLineEdit.setReadOnly(not editable)
         self.urlLineEdit.setReadOnly(not editable)
 
     @property
