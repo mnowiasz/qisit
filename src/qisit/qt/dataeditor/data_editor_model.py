@@ -52,11 +52,15 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         ICON = 2
 
     editable_role = QtCore.Qt.UserRole + 1
+    """ The user role defining if an item is editable """
+
     deletable_role = QtCore.Qt.UserRole + 2
+    """ The user role defining if an item can be deleted """
 
     mime_type = "application/x-qisit-dataeditor"
 
-    """ The user role defining if an item is mutable/immutable """
+    dataChanged = QtCore.pyqtSignal()
+    """ Data have been changed """
 
     def __init__(self, session: orm.Session):
 
@@ -354,3 +358,10 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 return 0
 
         return len(self._item_lists[column])
+
+    def setData(self, index: QtCore.QModelIndex, value: typing.Any, role: int = ...) -> bool:
+        root_row = self._parent_row[self.Columns.ROOT]
+
+        self.dataChanged.emit()
+        print(f"index: row = {index.row()}, column = {index.internalId()}, value={value} root={root_row}")
+        return False

@@ -27,19 +27,112 @@ from qisit.qt.dataeditor import data_editor_model
 
 class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
+    # ToDo: Deduplicate code (taken from recipe_window_controller
+    class _Decorators(object):
+        @classmethod
+        def change(cls, method):
+            """
+            A wrapper for methods that change the recipe data in some way. The wrapper makes sure that - if necessary -
+            a new nested transaction will be started and that the "changed" flag will be set
+
+            Args:
+                method ():
+
+            Returns:
+                wrapped method
+            """
+
+            def wrapped(self, *args, **kwargs):
+                if not self._transaction_started:
+                    self._session.begin_nested()
+                    self._transaction_started = True
+                self.modified = True
+                method(self, *args, **kwargs)
+
+            return wrapped
+
     def __init__(self, session : orm.Session):
         super().__init__()
         super(QtWidgets.QMainWindow, self).__init__()
         self._session = session
+        self._transaction_started = False
 
         self.setupUi(self)
         self._model = data_editor_model.DataEditorModel(self._session)
+        self._model.dataChanged.connect(self.set_modified)
         self.dataColumnView.setModel(self._model)
         self.init_ui()
 
-    def init_ui(self):
-       pass
+    @property
+    def modified(self) -> bool:
+        return self.isWindowModified()
 
+    @modified.setter
+    def modified(self, modified: bool):
+        self.setWindowModified(modified)
+        self.actionSave.setEnabled(modified)
+        self.actionRevert.setEnabled(modified)
+
+    def actionRevert_triggered(self, checked: bool = False):
+        self.revert_data()
+
+    def actionSave_triggered(self, checked: bool = False):
+        self.save_data()
+
+    def init_ui(self):
+        self.actionSave.triggered.connect(self.actionSave_triggered)
+        self.actionRevert.triggered.connect(self.actionRevert_triggered)
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """
+        Window has been closed by the user
+
+        Args:
+            event ():
+
+        Returns:
+
+        """
+        # TODO: Ask
+        if self._transaction_started:
+            self._session.rollback()
+        self.modified = False
+        event.accept()
+
+    def revert_data(self):
+        """
+        Reverts the recipe to the data stored in the database
+
+        Returns:
+
+        """
+
+        if self._transaction_started:
+            self._session.rollback()
+            self._transaction_started = False
+            self.dataColumnView.reset()
+            self.modified = False
+
+    def save_data(self):
+        """
+        Save the (modified) data into the current session
+
+        Returns:
+
+        """
+
+        if not self._transaction_started:
+            raise ValueError("No transaction started")
+
+        self._session.commit()
+        self.modified = False
+        self._transaction_started = False
+
+
+    @_Decorators.change
+    def set_modified(self):
+        """ Nothing to do here, the decorator does it work """
+        pass
 
 
 

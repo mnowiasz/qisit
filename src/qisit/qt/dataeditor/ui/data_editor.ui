@@ -71,6 +71,9 @@
    <addaction name="actionDelete"/>
   </widget>
   <action name="actionSave">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="../../resources/resources.qrc">
      <normaloff>:/icons/disk.png</normaloff>:/icons/disk.png</iconset>
@@ -80,6 +83,9 @@
    </property>
   </action>
   <action name="actionRevert">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="../../resources/resources.qrc">
      <normaloff>:/icons/arrow-return-180-left.png</normaloff>:/icons/arrow-return-180-left.png</iconset>
@@ -89,6 +95,9 @@
    </property>
   </action>
   <action name="actionDelete">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="../../resources/resources.qrc">
      <normaloff>:/icons/minus.png</normaloff>:/icons/minus.png</iconset>
