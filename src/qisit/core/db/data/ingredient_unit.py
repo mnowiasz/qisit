@@ -50,6 +50,7 @@ class IngredientUnit(db.Base):
 
     __tablename__ = "ingredient_unit"
 
+    # TODO: Replace this by using the base units dictionary
     unit_group = None
     """ The pseudo unit a group has. units can't be NULL/None, hence this construct """
 
@@ -87,6 +88,9 @@ class IngredientUnit(db.Base):
     A dictionary of unit (strings) to IngredientUnit. This dictionary will be a mixture of dynamically created
     items (the units in the user's local) and static items (the custom items stored in the database) 
     """
+
+    base_units = {}
+    """" The base unit for each type (apart from unspecific) """
 
     ingredientlist = orm.relationship("IngredientListEntry", order_by="IngredientListEntry.name")
 
@@ -150,6 +154,14 @@ class IngredientUnit(db.Base):
         # There's a bug currently in the CLDR data - "g" is not a short unit name for "Gram".
         gram_unit = session.query(IngredientUnit).filter(IngredientUnit.name == "mass-gram").first()
         cls.unit_dict["g"] = gram_unit
+
+        # Setup the base units
+
+        cls.base_units[cls.UnitType.MASS] = gram_unit
+        cls.base_units[cls.UnitType.VOLUME] =  session.query(IngredientUnit).filter(IngredientUnit.name == "volume-milliliter").first()
+        cls.base_units[cls.UnitType.QUANTITY] = session.query(IngredientUnit).filter(IngredientUnit.name == "").first()
+        cls.base_units[cls.UnitType.GROUP] = cls.unit_group
+
 
     def __init__(self, name: str, type_: UnitType = UnitType.QUANTITY, cldr: bool = False, factor=None,
                  description: str = None):

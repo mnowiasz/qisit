@@ -16,6 +16,7 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 import typing
+import pickle
 from enum import IntEnum
 
 from PyQt5 import QtCore, QtGui
@@ -49,6 +50,13 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         TABLE = 0
         NAME = 1
         ICON = 2
+
+    editable_role = QtCore.Qt.UserRole + 1
+    deletable_role = QtCore.Qt.UserRole + 2
+
+    mime_type = "application/x-qisit-dataeditor"
+
+    """ The user role defining if an item is mutable/immutable """
 
     def __init__(self, session: orm.Session):
 
@@ -85,6 +93,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self._cldr_font = QtGui.QFont()
         self._cldr_font.setItalic(True)
 
+        # Base unit - neither editable nor deletable
+        self._baseunit_font = QtGui.QFont()
+        self._baseunit_font.setBold(True)
+        self._baseunit_font.setItalic(True)
+
     def __setup_first_column(self):
         _translate = translate
         # Table, Item, Icon
@@ -102,6 +115,13 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             self.RootItems.YIELD_UNITS: (
                 data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
+
+    def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int, parent: QtCore.QModelIndex) -> bool:
+        print(f"ACTION = {action} row = {row} parent= {parent.row()}, column = {parent.internalId()}")
+        index_list = pickle.loads(data.data(self.mime_type))
+        print(index_list)
+        return True
+
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
         """ There's only one column regardless of the depth of the tree """
@@ -128,19 +148,24 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     return QtCore.QVariant(f"{self._first_column[row][self.FirstColumnData.NAME]} ({count})")
                 if role == QtCore.Qt.UserRole:
                     return QtCore.QVariant(count)
+
             if role == QtCore.Qt.DecorationRole:
                 icon = self._first_column[row][self.FirstColumnData.ICON]
                 if icon is not None:
                     return QtCore.QVariant(QtGui.QIcon(icon))
+
+            if role in (self.editable_role, self.deletable_role):
+                return False
+
             return QtCore.QVariant()
 
         root_row = self._parent_row[self.Columns.ROOT]
-
         if column == self.Columns.ITEMS:
             item = self._item_lists[self.Columns.ITEMS][row]
             count = item[1]
             if role == QtCore.Qt.UserRole:
                 return QtCore.QVariant(count)
+
             if role == QtCore.Qt.DisplayRole:
                 title = f"{item[0].name} ({count})"
                 if root_row == self.RootItems.INGREDIENTUNITS:
@@ -148,12 +173,32 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     if item[0].cldr:
                         title = f"{item[0].unit_string()} ({count})"
                 return QtCore.QVariant(title)
-            if role == QtCore.Qt.FontRole and root_row == self.RootItems.INGREDIENTUNITS:
-                # TODO: Immutable items should have a different font
-                if item[0].cldr:
-                    return QtCore.QVariant(self._cldr_font)
-            if role == QtCore.Qt.DecorationRole and root_row == self.RootItems.INGREDIENTUNITS:
-                return QtCore.QVariant(QtGui.QIcon(self._ingredient_unit_icons[item[0].type_]))
+
+            if role == QtCore.Qt.EditRole:
+                return QtCore.QVariant(item[0].name)
+
+            if root_row == self.RootItems.INGREDIENTUNITS:
+                ingredient_unit = item[0]
+                is_base_unit = ingredient_unit in data.IngredientUnit.base_units.values()
+
+                if role == QtCore.Qt.FontRole:
+                    if is_base_unit:
+                        return QtCore.QVariant(self._baseunit_font)
+                    elif ingredient_unit.cldr:
+                        return QtCore.QVariant(self._cldr_font)
+
+                if role == QtCore.Qt.DecorationRole:
+                    return QtCore.QVariant(QtGui.QIcon(self._ingredient_unit_icons[ingredient_unit.type_]))
+
+                if role == self.editable_role:
+                    return not ingredient_unit.cldr and not is_base_unit
+
+                if role == self.deletable_role:
+                    return not is_base_unit
+
+            if role in (self.editable_role, self.deletable_role):
+                return True
+
 
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
@@ -164,7 +209,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 else:
                     return 0
 
-            if role == QtCore.Qt.DisplayRole:
+            if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
                 # Different items have different leaves: Author, Cuisine, ... have the recipes' belonging to them
                 # displayed in it's leaf ("referenced") column. Ingredients on the other hand have got
                 # Ingredientlist entries displayed there. Recipes have got a title, all other tables a name (this was
@@ -174,6 +219,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     return QtCore.QVariant(item.name)
                 else:
                     return QtCore.QVariant(item.title)
+            if role == self.editable_role:
+                return True
+
         elif column == self.Columns.RECIPES:
             if role == QtCore.Qt.DisplayRole:
                 recipe = self._item_lists[column][row]
@@ -181,11 +229,21 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             if role == QtCore.Qt.UserRole:
                 # Last column
                 return 0
+            if role == self.editable_role:
+                return False
+
         return QtCore.QVariant(None)
 
-    def OFFflags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
+
+    def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         # Currently disabled, hence the OFF
-        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+
+        if index.data(role= self.editable_role):
+            flags |= QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsDropEnabled
+        return flags
+
+
 
     def hasChildren(self, parent: QtCore.QModelIndex = ...) -> bool:
         # Number of children is stored in the item's user role
@@ -200,6 +258,13 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             parent_column = parent.internalId()
             self._parent_row[parent_column] = parent.row()
             return self.createIndex(row, 0, parent_column + 1)
+
+    def mimeData(self, indexes: typing.Iterable[QtCore.QModelIndex]) -> QtCore.QMimeData:
+        index_list = [(index.row(), index.internalId()) for index in indexes]
+
+        mime_data =QtCore.QMimeData()
+        mime_data.setData(self.mime_type, pickle.dumps(index_list))
+        return mime_data
 
     def parent(self, child: QtCore.QModelIndex) -> QtCore.QModelIndex:
 
@@ -243,7 +308,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     # special class for Ingredient Grouos
                     self._item_lists[column] = self._session.query(the_table, func.count(data.IngredientListEntry.id))\
                         .join(data.IngredientListEntry, data.IngredientUnit.id == data.IngredientListEntry.unit_id,
-                              isouter=True).order_by(text('cldr DESC, lower(ingredient_unit.name) ASC'))\
+                              isouter=True).order_by(text('cldr DESC, type_ ASC,  lower(ingredient_unit.name) ASC'))\
                         .group_by(the_table.id) \
                         .filter(data.IngredientUnit.type_ != data.IngredientUnit.UnitType.GROUP).all()
                 else:

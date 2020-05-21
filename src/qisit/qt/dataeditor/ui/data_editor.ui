@@ -19,7 +19,20 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QColumnView" name="dataColumnView"/>
+     <widget class="QColumnView" name="dataColumnView">
+      <property name="dragEnabled">
+       <bool>true</bool>
+      </property>
+      <property name="dragDropOverwriteMode">
+       <bool>true</bool>
+      </property>
+      <property name="dragDropMode">
+       <enum>QAbstractItemView::DragDrop</enum>
+      </property>
+      <property name="defaultDropAction">
+       <enum>Qt::MoveAction</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -32,8 +45,58 @@
      <height>30</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuData">
+    <property name="title">
+     <string>Data</string>
+    </property>
+    <addaction name="actionSave"/>
+    <addaction name="actionRevert"/>
+   </widget>
+   <addaction name="menuData"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionSave"/>
+   <addaction name="actionRevert"/>
+   <addaction name="separator"/>
+   <addaction name="actionDelete"/>
+  </widget>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/disk.png</normaloff>:/icons/disk.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionRevert">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/arrow-return-180-left.png</normaloff>:/icons/arrow-return-180-left.png</iconset>
+   </property>
+   <property name="text">
+    <string>Revert</string>
+   </property>
+  </action>
+  <action name="actionDelete">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/minus.png</normaloff>:/icons/minus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../../resources/resources.qrc"/>

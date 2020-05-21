@@ -600,6 +600,7 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
 
         # It's far, far easier to use a internal list than to encode/decode the indices in the mime data. This might
         # not be very elegant, but's it easier
+        # TODO: Use pickle
         self._dragged_indices = []
         for index in indexes:
             if index.column() == self.IngredientColumns.INGREDIENT:
