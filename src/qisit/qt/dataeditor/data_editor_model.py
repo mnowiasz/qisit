@@ -52,12 +52,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         NAME = 1
         ICON = 2
 
-    editable_role = QtCore.Qt.UserRole + 1
-    """ The user role defining if an item is editable """
-
-    deletable_role = QtCore.Qt.UserRole + 2
-    """ The user role defining if an item can be deleted """
-
     mime_type = "application/x-qisit-dataeditor"
 
     dataChanged = QtCore.pyqtSignal()
@@ -165,9 +159,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 if icon is not None:
                     return QtCore.QVariant(QtGui.QIcon(icon))
 
-            if role in (self.editable_role, self.deletable_role):
-                return False
-
             return QtCore.QVariant()
 
         root_row = self._parent_row[self.Columns.ROOT]
@@ -201,14 +192,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 if role == QtCore.Qt.DecorationRole:
                     return QtCore.QVariant(QtGui.QIcon(self._ingredient_unit_icons[ingredient_unit.type_]))
 
-                if role == self.editable_role:
-                    return not ingredient_unit.cldr and not is_base_unit
-
-                if role == self.deletable_role:
-                    return not is_base_unit
-
-            if role in (self.editable_role, self.deletable_role):
-                return True
 
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
@@ -229,9 +212,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     return QtCore.QVariant(item.name)
                 else:
                     return QtCore.QVariant(item.title)
-            if role == self.editable_role:
-                return root_row in (
-                    self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTUNITS)
 
         elif column == self.Columns.RECIPES:
             if role == QtCore.Qt.DisplayRole:
@@ -240,25 +220,46 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             if role == QtCore.Qt.UserRole:
                 # Last column
                 return 0
-            if role == self.editable_role:
-                return False
-
         return QtCore.QVariant(None)
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
         column = index.internalId()
 
-        if index.data(role=self.editable_role):
-            flags |= QtCore.Qt.ItemIsEditable
+        is_editable = False
+        is_drop_enabled = False
+        is_drag_enabled = False
+
+        if column in (self.Columns.ITEMS, self.Columns.REFERENCED):
 
             # Only certain combinations of drag&drop make sense: The item column can drag itself on another item
             # and recipes can be dragged to another author or cuisine. All other combination aren't very useful
-            if column == self.Columns.ITEMS or self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS:
-                flags |= QtCore.Qt.ItemIsDragEnabled
+            is_drag_enabled = (self.Columns.ITEMS or self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS)
+            is_editable = (column == self.Columns.ITEMS)
 
-        if column == self.Columns.ITEMS:
+            root_row = self._parent_row[self.Columns.ROOT]
+
+            if column == self.Columns.ITEMS:
+                is_drop_enabled = True
+                if root_row == self.RootItems.INGREDIENTUNITS:
+                    ingredient_unit = self._item_lists[self.Columns.ITEMS][index.row()][0]
+                    is_editable = not ingredient_unit.cldr and not ingredient_unit in data.IngredientUnit.base_units.values()
+                    is_drag_enabled = is_editable
+                else:
+                    is_editable = True
+                    is_drag_enabled = True
+            else:
+                is_editable = root_row in (
+                    self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTUNITS)
+
+        if is_editable:
+            flags |= QtCore.Qt.ItemIsEditable
+
+        if is_drop_enabled:
             flags |= QtCore.Qt.ItemIsDropEnabled
+
+        if is_drag_enabled:
+            flags |= QtCore.Qt.ItemIsDragEnabled
 
         return flags
 

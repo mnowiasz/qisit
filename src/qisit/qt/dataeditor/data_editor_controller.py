@@ -83,6 +83,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.save_data()
 
     def init_ui(self):
+        self.setWindowTitle(f"{self.windowTitle()} [*]")
+        self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
         self.actionSave.triggered.connect(self.actionSave_triggered)
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
 
