@@ -62,7 +62,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         self.setupUi(self)
         self._model = data_editor_model.DataEditorModel(self._session)
-        self._model.dataChanged.connect(self.set_modified)
+        self._model.changed.connect(self.set_modified)
         self.dataColumnView.setModel(self._model)
         self.init_ui()
 

@@ -54,7 +54,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
     mime_type = "application/x-qisit-dataeditor"
 
-    dataChanged = QtCore.pyqtSignal()
+    changed = QtCore.pyqtSignal()
     """ Data have been changed """
 
     def __init__(self, session: orm.Session):
@@ -86,10 +86,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         # The list of items displayed in the column
         self._item_lists = {column: [] for column in self.Columns}
-
-        # For whatever reason rowCount() is called multiple times (at least four). This is to prevent unnecessary
-        # loading
-        self._item_parent_rows = [None for column in self.Columns]
 
         # Item is a CLDR unit, therefore not editable (the name of the item is generated dymically using the
         # user's locale
@@ -138,7 +134,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         return 1
 
     def data(self, index: QtCore.QModelIndex, role: int = ...) -> typing.Any:
-
         if role not in (
                 QtCore.Qt.DisplayRole, QtCore.Qt.DecorationRole, QtCore.Qt.EditRole, QtCore.Qt.FontRole,
                 QtCore.Qt.UserRole):
@@ -240,81 +235,71 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         target_row = parent.row()
         # Not used  currently - only drops on the Item columns are allowed
         target_column = parent.internalId()
+
         root_row = self._parent_row[self.Columns.ROOT]
+        # The affeced recipes
         recipes_ids = set()
-        self.dataChanged.emit()
+        self.changed.emit()
 
         for (index_row, index_column) in index_list:
             if index_column == target_column:
                 # Merge operation
-                merge_item = self._item_lists[target_column][index_row][0]
+
+                source_item = self._item_lists[target_column][index_row][0]
                 target_item = self._item_lists[target_column][target_row][0]
 
                 # Merging an item with itself is useless
-                if merge_item != target_item:
-                    recipes_ids= recipes_ids.union([recipe.id for recipe in merge_item.recipes])
-                    if root_row == self.RootItems.AUTHOR:
-                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+                if source_item != target_item:
+                    recipes_ids = recipes_ids.union([recipe.id for recipe in source_item.recipes])
+                    self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
 
-                        self._session.query(data.Recipe).filter(data.Recipe.author_id == merge_item.id).update({data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
-                        self._session.expire_all()
-                        self._session.delete(merge_item)
-                    elif root_row == self.RootItems.CUISINE:
-                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
-                        self._session.query(data.Recipe).filter(data.Recipe.cuisine_id == merge_item.id).update({data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
-                        self._session.expire_all()
-                        self._session.delete(merge_item)
-                        self.endRemoveRows()
-                    elif root_row == self.RootItems.YIELD_UNITS:
-                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
-                        self._session.query(data.Recipe).filter(data.Recipe.yield_unit_id == merge_item.id).update({data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
-                        self._session.expire_all()
-                        self._session.delete(merge_item)
-                        self.endRemoveRows()
+                    the_table = None
+                    if root_row in (self.RootItems.AUTHOR, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
+                        the_query = self._session.query(data.Recipe)
+                        if root_row == self.RootItems.AUTHOR:
+                            the_query.filter(data.Recipe.author_id == source_item.id).update(
+                                {data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
+                        elif root_row == self.RootItems.CUISINE:
+                            the_query.filter(data.Recipe.cuisine_id == source_item.id).update(
+                                {data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
+                        elif root_row == self.RootItems.YIELD_UNITS:
+                            the_query.query(data.Recipe).filter(data.Recipe.yield_unit_id == source_item.id).update(
+                                {data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
+
                     elif root_row == self.RootItems.CATEGORIES:
                         # Categories are special. TODO: Maybe construct a (rather complicated, probably) Query instead
                         # of this
-                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
 
-                        aux_list = [recipe for recipe in merge_item.recipes]
-                        for recipe in aux_list:
+                        # Need to copy the list recipes - because making changes will alter the original recipes
+                        recipes = [recipe for recipe in source_item.recipes]
+                        for recipe in recipes:
                             if target_item not in recipe.categories:
                                 recipe.categories.append(target_item)
-                            recipe.categories.remove(merge_item)
-                        self._session.delete(merge_item)
-                        self.endRemoveRows()
+                            recipe.categories.remove(source_item)
                     elif root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
-                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
-                        self._session.query(data.IngredientListEntry).filter(data.IngredientListEntry.ingredient_id == merge_item.id).update({data.IngredientListEntry.ingredient_id: target_item.id}, synchronize_session='evaluate')
-                        self._session.expire_all()
-                        self._session.delete(merge_item)
-                        self.endRemoveRows()
+                        self._session.query(data.IngredientListEntry).filter(
+                            data.IngredientListEntry.ingredient_id == source_item.id).update(
+                            {data.IngredientListEntry.ingredient_id: target_item.id}, synchronize_session='evaluate')
                     elif root_row == self.RootItems.INGREDIENTUNITS:
-                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
-                        self._session.query(data.IngredientListEntry).filter(data.IngredientListEntry.unit_id == merge_item.id).update({data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
-                        self._session.expire_all()
-                        self._session.delete(merge_item)
-                        self.endRemoveRows()
+                        self._session.query(data.IngredientListEntry).filter(
+                            data.IngredientListEntry.unit_id == source_item.id).update(
+                            {data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
+                    self._session.expire_all()
+                    self._session.delete(source_item)
             else:
                 # Append
                 target_item = self._item_lists[target_column][target_row][0]
+                self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
                 if root_row == self.RootItems.CUISINE:
                     recipe = self._item_lists[index_column][index_row]
-                    self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
                     recipe.cuisine = target_item
-                    #self._session.merge(recipe)
-                    self._session.refresh(target_item)
-                    #super().dataChanged.emit()
-                    self.endRemoveRows()
+
                 elif root_row == self.RootItems.INGREDIENTS:
                     ingredient_list_entry = self._item_lists[index_column][index_row]
-                    self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
                     ingredient_list_entry.ingredient = target_item
-                    self.endRemoveRows()
-                    self._session.refresh(target_item)
+                self._session.refresh(target_item)
 
-        #self._model_changed = True
-        #self.layoutChanged.emit()
+        self.endRemoveRows()
         return True
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
@@ -395,7 +380,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         Returns:
 
         """
-        self._model_changed = True
+
         self.affected_recipe_ids.clear()
 
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
@@ -409,74 +394,63 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # and then fetching the data (duplicating the same joins) this is done here
         parent_row = parent.row()
 
-        # Depending on the previous content or the repeated calls of rowCount(), either load the content or
-        # do nothing
-        if parent_row != self._item_parent_rows[column] or  True:
+        # TODO: Restore/optimize by caching
+        if column == self.Columns.ITEMS:
+            the_table = self._first_column[parent_row][self.FirstColumnData.TABLE]
 
-            self._model_changed = False
+            # Construct the query
+            query = None
 
-            # Reset all further columns, otherwise odd things might happen: if the next column has the same parent_row
-            # as before, it wouldn't be reloaded creating odd effects
-            for the_column in range(column + 1, self.Columns.RECIPES + 1):
-                self._item_parent_rows[the_column] = None
-            self._item_parent_rows[column] = parent_row
-
-            if column == self.Columns.ITEMS:
-                the_table = self._first_column[parent_row][self.FirstColumnData.TABLE]
-
-                # Construct the query
-                query = None
-
-                if parent_row == self.RootItems.INGREDIENTUNITS:
-                    # Ingredients (or better: amount units) are rather special - due to the handling of
-                    # CLDR the query has too little in common wit the other ones. There's also the one
-                    # special class for Ingredient Groups
-                    self._item_lists[column] = self._session.query(the_table, func.count(data.IngredientListEntry.id)) \
-                        .join(data.IngredientListEntry, data.IngredientUnit.id == data.IngredientListEntry.unit_id,
-                              isouter=True).order_by(text('cldr DESC, type_ ASC,  lower(ingredient_unit.name) ASC')) \
-                        .group_by(the_table.id) \
-                        .filter(data.IngredientUnit.type_ != data.IngredientUnit.UnitType.GROUP).all()
-                else:
-                    if parent_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS):
-                        # Ingredient groups and Ingredients are virtually the same - the only difference is that
-                        # Ingredients have is_group = False, where for Ingredients groups it's true
-                        group = (parent_row == self.RootItems.INGREDIENTGROUPS)
-                        query = self._session.query(the_table, func.count(data.IngredientListEntry.id).label("count")) \
-                            .join(data.IngredientListEntry, isouter=True).filter(data.Ingredient.is_group == group)
-                    else:
-                        query = self._session.query(the_table, func.count(data.Recipe.id).label("count"))
-
-                        # Categories need an additional join
-                        if parent_row == self.RootItems.CATEGORIES:
-                            query = query.join(data.CategoryList, data.Category.id == data.CategoryList.category_id,
-                                               isouter=True)
-
-                        query = query.join(data.Recipe, isouter=True)
-
-                    self._item_lists[column] = query.group_by(the_table.id).order_by(func.lower(the_table.name)).all()
-
-            elif column == self.Columns.REFERENCED:
-                item = self._item_lists[self.Columns.ITEMS][parent_row][0]
-                root_row = self._parent_row[self.Columns.ROOT]
-
-                # Copy the lists. Otherwise - when cleared - they would be erased from the
-                # database itself: items/recipes are sqlalchemy lists, very convenient - but changes
-                # there will cause database changes, too, so clearing() such a list will cause the references
-                # to be deleted for real.
-                item_list = None
-                if root_row == self.RootItems.INGREDIENTS:
-                    item_list = item.items
-                elif root_row == self.RootItems.INGREDIENTUNITS:
-                    item_list = item.ingredientlist
-                else:
-                    item_list = item.recipes
-                self._item_lists[column] = [item_data for item_data in item_list]
-
-            elif column == self.Columns.RECIPES:
-                recipe = self._item_lists[self.Columns.REFERENCED][parent_row].recipe
-                self._item_lists[column] = [recipe, ]
+            if parent_row == self.RootItems.INGREDIENTUNITS:
+                # Ingredients (or better: amount units) are rather special - due to the handling of
+                # CLDR the query has too little in common with the other ones. There's also the one
+                # special class for Ingredient Groups
+                self._item_lists[column] = self._session.query(the_table, func.count(data.IngredientListEntry.id)) \
+                    .join(data.IngredientListEntry, data.IngredientUnit.id == data.IngredientListEntry.unit_id,
+                          isouter=True).order_by(text('cldr DESC, type_ ASC,  lower(ingredient_unit.name) ASC')) \
+                    .group_by(the_table.id) \
+                    .filter(data.IngredientUnit.type_ != data.IngredientUnit.UnitType.GROUP).all()
             else:
-                return 0
+                if parent_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS):
+                    # Ingredient groups and Ingredients are virtually the same - the only difference is that
+                    # Ingredients have is_group = False, where for Ingredients groups it's true
+                    group = (parent_row == self.RootItems.INGREDIENTGROUPS)
+                    query = self._session.query(the_table, func.count(data.IngredientListEntry.id).label("count")) \
+                        .join(data.IngredientListEntry, isouter=True).filter(data.Ingredient.is_group == group)
+                else:
+                    # Items which have recipes attached to them
+                    query = self._session.query(the_table, func.count(data.Recipe.id).label("count"))
+
+                    # Categories need an additional join
+                    if parent_row == self.RootItems.CATEGORIES:
+                        query = query.join(data.CategoryList, data.Category.id == data.CategoryList.category_id,
+                                           isouter=True)
+                    query = query.join(data.Recipe, isouter=True)
+
+                self._item_lists[column] = query.group_by(the_table.id).order_by(func.lower(the_table.name)).all()
+
+        elif column == self.Columns.REFERENCED:
+            item = self._item_lists[self.Columns.ITEMS][parent_row][0]
+            root_row = self._parent_row[self.Columns.ROOT]
+
+            # Copy the lists. Otherwise - when cleared - they would be erased from the
+            # database itself: items/recipes are sqlalchemy lists, very convenient - but changes
+            # there will cause database changes, too, so clearing() such a list will cause the references
+            # to be deleted for real.
+            item_list = None
+            if root_row == self.RootItems.INGREDIENTS:
+                item_list = item.items
+            elif root_row == self.RootItems.INGREDIENTUNITS:
+                item_list = item.ingredientlist
+            else:
+                item_list = item.recipes
+            self._item_lists[column] = [item_data for item_data in item_list]
+
+        elif column == self.Columns.RECIPES:
+            recipe = self._item_lists[self.Columns.REFERENCED][parent_row].recipe
+            self._item_lists[column] = [recipe, ]
+        else:
+            return 0
 
         return len(self._item_lists[column])
 
@@ -503,7 +477,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         duplicate = self._session.query(the_table).filter(the_table.name == value).first()
         if duplicate:
             if duplicate == item:
-                # The same item. Nothing to do here.
+                # The same item - user has double clicked and then again. Nothing to do here.
                 return False
             else:
                 # Duplicate item. There three possible ways to deal with this:
@@ -513,7 +487,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
                 # Currently: Choice 1.)
                 return False
-        self.dataChanged.emit()
+        self.changed.emit()
         self.affected_recipe_ids = self.affected_recipe_ids.union(changed_recipes)
         item.name = value
         return True
