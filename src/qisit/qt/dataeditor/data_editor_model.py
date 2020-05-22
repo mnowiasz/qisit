@@ -295,9 +295,26 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                         self._session.expire_all()
                         self._session.delete(merge_item)
                         self.endRemoveRows()
+            else:
+                # Append
+                target_item = self._item_lists[target_column][target_row][0]
+                if root_row == self.RootItems.CUISINE:
+                    recipe = self._item_lists[index_column][index_row]
+                    self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
+                    recipe.cuisine = target_item
+                    #self._session.merge(recipe)
+                    self._session.refresh(target_item)
+                    #super().dataChanged.emit()
+                    self.endRemoveRows()
+                elif root_row == self.RootItems.INGREDIENTS:
+                    ingredient_list_entry = self._item_lists[index_column][index_row]
+                    self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
+                    ingredient_list_entry.ingredient = target_item
+                    self.endRemoveRows()
+                    self._session.refresh(target_item)
 
-        self._model_changed = True
-        self.layoutChanged.emit()
+        #self._model_changed = True
+        #self.layoutChanged.emit()
         return True
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
@@ -394,7 +411,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         # Depending on the previous content or the repeated calls of rowCount(), either load the content or
         # do nothing
-        if parent_row != self._item_parent_rows[column] or self._model_changed:
+        if parent_row != self._item_parent_rows[column] or  True:
 
             self._model_changed = False
 
