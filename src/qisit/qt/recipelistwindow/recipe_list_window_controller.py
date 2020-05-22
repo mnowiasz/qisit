@@ -212,6 +212,9 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         else:
             parent_action.setEnabled(True)
             self._filter_menus[table].clear()
+
+            # Determine if the filter should be active - after all, the item could have been deleted or merged
+            filter_active = False
             for item in items:
                 filter_action = QtWidgets.QAction(parent_action)
                 filter_action.setText(f"{item.name} ({len(item.recipes)})")
@@ -221,11 +224,20 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
                 # there after the update. This is no problem, the SQL statement ("IN (...)") will still work.
                 # Granted, it's a bit sloppy, but too much hassle finding out which items has been deleted and
                 # removing them from the filters.
-                filter_action.setChecked(item.id in self.table_model.filters[table])
+                checked = item.id in self.table_model.filters[table]
+
+                # If at least one item is checked the filter is active
+                filter_active |= checked
+                filter_action.setChecked(checked)
                 filter_action.triggered.connect(
                     lambda checked, my_table=table, my_id=item.id: self.actionFilterMenu_triggered(my_table, my_id,
                                                                                                    checked))
                 self._filter_menus[table].addAction(filter_action)
+
+            # The filter item has been removed/merged.
+            if not filter_active:
+                self.table_model.filters[table].clear()
+                self._action_filters[table].setChecked(False)
 
     def _update_page_buttons(self):
         """

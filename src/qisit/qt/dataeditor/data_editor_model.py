@@ -271,6 +271,30 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                         self._session.expire_all()
                         self._session.delete(merge_item)
                         self.endRemoveRows()
+                    elif root_row == self.RootItems.CATEGORIES:
+                        # Categories are special. TODO: Maybe construct a (rather complicated, probably) Query instead
+                        # of this
+                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+
+                        aux_list = [recipe for recipe in merge_item.recipes]
+                        for recipe in aux_list:
+                            if target_item not in recipe.categories:
+                                recipe.categories.append(target_item)
+                            recipe.categories.remove(merge_item)
+                        self._session.delete(merge_item)
+                        self.endRemoveRows()
+                    elif root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
+                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+                        self._session.query(data.IngredientListEntry).filter(data.IngredientListEntry.ingredient_id == merge_item.id).update({data.IngredientListEntry.ingredient_id: target_item.id}, synchronize_session='evaluate')
+                        self._session.expire_all()
+                        self._session.delete(merge_item)
+                        self.endRemoveRows()
+                    elif root_row == self.RootItems.INGREDIENTUNITS:
+                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+                        self._session.query(data.IngredientListEntry).filter(data.IngredientListEntry.unit_id == merge_item.id).update({data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
+                        self._session.expire_all()
+                        self._session.delete(merge_item)
+                        self.endRemoveRows()
 
         self._model_changed = True
         self.layoutChanged.emit()
