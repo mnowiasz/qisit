@@ -423,6 +423,8 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         if self._data_editor is None:
             self._data_editor = DataEditorController(session = self._session)
             self._data_editor.dataCommited.connect(self.dataeditor_commited)
+            self._data_editor.recipeDoubleClicked.connect(self.open_recipe)
+
         self._data_editor.show()
 
     def actionDelete_Recipe_s_triggered(self, checked: bool = False):
@@ -682,6 +684,32 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
             self.table_model.offset = new_offset
             self._reload_model()
 
+    def open_recipe(self, recipe: data.Recipe):
+        """
+        Opens the recipe - either create a new window or show an existing one
+
+        Args:
+            recipe_id (): The id
+
+        Returns:
+
+        """
+
+        recipe_window = None
+
+        # Is there already a window displaying this recipe?
+        if recipe.id in self._recipe_windows:
+            recipe_window = self._recipe_windows[recipe.id]
+        else:
+            recipe_window = recipe_window_controller.RecipeWindow(session=self._session, recipe=recipe)
+            self._recipe_windows[recipe.id] = recipe_window
+            recipe_window.destroyed.connect(lambda: self._recipe_window_closed(recipe.id))
+            recipe_window.recipeChanged.connect(self.recipe_commited)
+
+        recipe_window.setEnabled(True)
+        recipe_window.show()
+        recipe_window.raise_()
+
     def recipe_commited(self):
         """
         A recipe has been changed and saved
@@ -749,21 +777,8 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         """
         recipe = self.table_model.recipe_at_row(index.row())
         if recipe:
-            recipe_id = recipe.id
-            recipe_window = None
+            self.open_recipe(recipe)
 
-            # Is there already a window displaying this recipe?
-            if recipe_id in self._recipe_windows:
-                recipe_window = self._recipe_windows[recipe_id]
-            else:
-                recipe_window = recipe_window_controller.RecipeWindow(session=self._session, recipe=recipe)
-                self._recipe_windows[recipe_id] = recipe_window
-                recipe_window.destroyed.connect(lambda: self._recipe_window_closed(recipe_id))
-                recipe_window.recipeChanged.connect(self.recipe_commited)
-
-            recipe_window.setEnabled(True)
-            recipe_window.show()
-            recipe_window.raise_()
 
     def recipeTableView_selectionChanged(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
         """

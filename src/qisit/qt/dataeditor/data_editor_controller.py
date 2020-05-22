@@ -54,6 +54,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     dataCommited = QtCore.pyqtSignal(set)
     """ Emitted (including a list/set of affected Recipe IDs) when the data has been committed """
 
+    recipeDoubleClicked = QtCore.pyqtSignal(data.Recipe)
+    """ Emitted when the user double clicked on a recipe"""
+
     def __init__(self, session : orm.Session):
         super().__init__()
         super(QtWidgets.QMainWindow, self).__init__()
@@ -87,6 +90,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
         self.actionSave.triggered.connect(self.actionSave_triggered)
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
+        self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """
@@ -103,6 +107,19 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             self._session.rollback()
         self.modified = False
         event.accept()
+
+    def dataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
+        column = index.internalId()
+        row = index.row()
+        recipe = None
+        if column == self._model.Columns.RECIPES:
+            recipe = self._model.get_item(row, column)
+        elif column == self._model.Columns.REFERENCED:
+            root_row = self._model.root_row()
+            if root_row not in (self._model.RootItems.INGREDIENTS, self._model.RootItems.INGREDIENTUNITS):
+                recipe = self._model.get_item(row, column)
+        if recipe is not None:
+           self.recipeDoubleClicked.emit(recipe)
 
     def revert_data(self):
         """

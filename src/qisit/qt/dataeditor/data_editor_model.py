@@ -329,8 +329,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     is_editable = True
                     is_drag_enabled = True
             else:
-                is_editable = root_row in (
-                    self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTUNITS)
+                is_editable = root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS)
 
         if is_editable:
             flags |= QtCore.Qt.ItemIsEditable
@@ -342,6 +341,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             flags |= QtCore.Qt.ItemIsDragEnabled
 
         return flags
+
+    def get_item(self, row: int, column: int):
+        return self._item_lists[column][row]
 
     def hasChildren(self, parent: QtCore.QModelIndex = ...) -> bool:
         # Number of children is stored in the item's user role
@@ -382,6 +384,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         """
 
         self.affected_recipe_ids.clear()
+
+    def root_row(self) -> int:
+        return self._parent_row[self.Columns.ROOT]
 
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
         if parent.row() == -1:
