@@ -70,6 +70,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # column.
         self._parent_row = {}
 
+        self._model_resetted = False
+
         # Table, Text, Icon.
         self._first_column = {}
         self.__setup_first_column()
@@ -123,6 +125,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
                         parent: QtCore.QModelIndex) -> bool:
 
+        if not data.hasFormat(self.mime_type):
+            return False
+
         # Only drops on the Item columns are allowed. And then only dropping directly on an item - the seconds
         # clause takes care of that. Otherwise it would be possible (at least visibly) to move an item to a leaf above
         # or beneath another item
@@ -133,10 +138,17 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         return 1
 
     def data(self, index: QtCore.QModelIndex, role: int = ...) -> typing.Any:
+
+        if role not in (
+                QtCore.Qt.DisplayRole, QtCore.Qt.DecorationRole, QtCore.Qt.EditRole, QtCore.Qt.FontRole,
+                QtCore.Qt.UserRole):
+            return QtCore.QVariant(None)
+
         column = index.internalId()
         row = index.row()
         count = 0
         if column == self.Columns.ROOT:
+            # TODO: This needs optimization, for example caching.
             if role in (QtCore.Qt.DisplayRole, QtCore.Qt.UserRole):
                 # Construct a query, i.e. which table to query
                 query = self._session.query(self._first_column[row][self.FirstColumnData.TABLE])
@@ -192,7 +204,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 if role == QtCore.Qt.DecorationRole:
                     return QtCore.QVariant(QtGui.QIcon(self._ingredient_unit_icons[ingredient_unit.type_]))
 
-
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
             if role == QtCore.Qt.UserRole:
@@ -222,6 +233,41 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 return 0
         return QtCore.QVariant(None)
 
+    def dropMimeData(self, mimedata: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
+                     parent: QtCore.QModelIndex) -> bool:
+
+        index_list = pickle.loads(mimedata.data(self.mime_type))
+        target_row = parent.row()
+        # Not used  currently - only drops on the Item columns are allowed
+        target_column = parent.internalId()
+        print(target_column)
+        root_row = self._parent_row[self.Columns.ROOT]
+        recipes_ids = set()
+        self.dataChanged.emit()
+
+        self.beginResetModel()
+        for (index_row, index_column) in index_list:
+            if index_column == target_column:
+                # Merge operation
+                merge_item = self._item_lists[target_column][index_row][0]
+                target_item = self._item_lists[target_column][target_row][0]
+                if merge_item != target_item:
+                    recipes_ids= recipes_ids.union([recipe.id for recipe in merge_item.recipes])
+                    if root_row == self.RootItems.AUTHOR:
+                        print(merge_item)
+                        print(target_item)
+                        self._session.query(data.Recipe).filter(data.Recipe.author_id == merge_item.id).update({data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
+                        self._session.expire_all()
+                        self._session.delete(merge_item)
+                        self.removeRow(index_row, self.createIndex(root_row, 0, self.Columns.ROOT))
+
+        self._model_resetted = True
+        self.endResetModel()
+
+        print(index_list)
+        print(recipes_ids)
+        return True
+
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
         column = index.internalId()
@@ -234,8 +280,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
             # Only certain combinations of drag&drop make sense: The item column can drag itself on another item
             # and recipes can be dragged to another author or cuisine. All other combination aren't very useful
-            is_drag_enabled = (self.Columns.ITEMS or self._parent_row[self.Columns.ROOT] == self.RootItems.INGREDIENTS)
-            is_editable = (column == self.Columns.ITEMS)
+            is_drag_enabled = (column == self.Columns.ITEMS or self._parent_row[self.Columns.ROOT] in (
+                self.RootItems.INGREDIENTS, self.RootItems.CUISINE))
 
             root_row = self._parent_row[self.Columns.ROOT]
 
@@ -300,7 +346,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         Returns:
 
         """
-
+        self._model_resetted = True
         self.affected_recipe_ids.clear()
 
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
@@ -316,7 +362,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         # Depending on the previous content or the repeated calls of rowCount(), either load the content or
         # do nothing
-        if parent_row != self._item_parent_rows[column]:
+        if parent_row != self._item_parent_rows[column] or self._model_resetted:
+
+            self._model_resetted = False
 
             # Reset all further columns, otherwise odd things might happen: if the next column has the same parent_row
             # as before, it wouldn't be reloaded creating odd effects
