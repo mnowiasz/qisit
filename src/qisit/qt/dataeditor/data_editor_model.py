@@ -249,6 +249,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 # Merge operation
                 merge_item = self._item_lists[target_column][index_row][0]
                 target_item = self._item_lists[target_column][target_row][0]
+
+                # Merging an item with itself is useless
                 if merge_item != target_item:
                     recipes_ids= recipes_ids.union([recipe.id for recipe in merge_item.recipes])
                     if root_row == self.RootItems.AUTHOR:
@@ -257,10 +259,21 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                         self._session.query(data.Recipe).filter(data.Recipe.author_id == merge_item.id).update({data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
                         self._session.expire_all()
                         self._session.delete(merge_item)
-
+                    elif root_row == self.RootItems.CUISINE:
+                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+                        self._session.query(data.Recipe).filter(data.Recipe.cuisine_id == merge_item.id).update({data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
+                        self._session.expire_all()
+                        self._session.delete(merge_item)
+                        self.endRemoveRows()
+                    elif root_row == self.RootItems.YIELD_UNITS:
+                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+                        self._session.query(data.Recipe).filter(data.Recipe.yield_unit_id == merge_item.id).update({data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
+                        self._session.expire_all()
+                        self._session.delete(merge_item)
                         self.endRemoveRows()
 
         self._model_changed = True
+        self.layoutChanged.emit()
         return True
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
