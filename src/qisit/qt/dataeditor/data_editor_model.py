@@ -70,7 +70,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # column.
         self._parent_row = {}
 
-        self._model_resetted = False
+        self._model_changed = False
 
         # Table, Text, Icon.
         self._first_column = {}
@@ -240,12 +240,10 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         target_row = parent.row()
         # Not used  currently - only drops on the Item columns are allowed
         target_column = parent.internalId()
-        print(target_column)
         root_row = self._parent_row[self.Columns.ROOT]
         recipes_ids = set()
         self.dataChanged.emit()
 
-        self.beginResetModel()
         for (index_row, index_column) in index_list:
             if index_column == target_column:
                 # Merge operation
@@ -254,18 +252,15 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 if merge_item != target_item:
                     recipes_ids= recipes_ids.union([recipe.id for recipe in merge_item.recipes])
                     if root_row == self.RootItems.AUTHOR:
-                        print(merge_item)
-                        print(target_item)
+                        self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+
                         self._session.query(data.Recipe).filter(data.Recipe.author_id == merge_item.id).update({data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
                         self._session.expire_all()
                         self._session.delete(merge_item)
-                        self.removeRow(index_row, self.createIndex(root_row, 0, self.Columns.ROOT))
 
-        self._model_resetted = True
-        self.endResetModel()
+                        self.endRemoveRows()
 
-        print(index_list)
-        print(recipes_ids)
+        self._model_changed = True
         return True
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
@@ -346,7 +341,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         Returns:
 
         """
-        self._model_resetted = True
+        self._model_changed = True
         self.affected_recipe_ids.clear()
 
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
@@ -362,9 +357,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         # Depending on the previous content or the repeated calls of rowCount(), either load the content or
         # do nothing
-        if parent_row != self._item_parent_rows[column] or self._model_resetted:
+        if parent_row != self._item_parent_rows[column] or self._model_changed:
 
-            self._model_resetted = False
+            self._model_changed = False
 
             # Reset all further columns, otherwise odd things might happen: if the next column has the same parent_row
             # as before, it wouldn't be reloaded creating odd effects

@@ -20,6 +20,7 @@ class Ui_dataEditor(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
         self.verticalLayout.setObjectName("verticalLayout")
         self.dataColumnView = QtWidgets.QColumnView(self.centralwidget)
+        self.dataColumnView.setFocusPolicy(QtCore.Qt.NoFocus)
         self.dataColumnView.setDragEnabled(True)
         self.dataColumnView.setDragDropOverwriteMode(True)
         self.dataColumnView.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)

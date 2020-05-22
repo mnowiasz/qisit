@@ -20,6 +20,9 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QColumnView" name="dataColumnView">
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
       <property name="dragEnabled">
        <bool>true</bool>
       </property>
