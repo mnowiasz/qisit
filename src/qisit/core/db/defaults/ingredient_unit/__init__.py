@@ -27,6 +27,10 @@ def load_values(db_session: session, module):
             unit = IngredientUnit(type_=unit_type, name=entry[0], factor=entry[1], description=entry[2], cldr=True)
             db_session.add(unit)
 
+    def add_quantity_units(data, unit_type: IngredientUnit.UnitType):
+        for entry in data:
+            unit = IngredientUnit(type_=unit_type, name=entry[0], factor=entry[1], description=entry[2], cldr=False)
+
     def add_custom_units(data, unit_type: IngredientUnit.UnitType):
         for entry in data:
             unit = IngredientUnit(type_=unit_type, name=entry[0], factor=None, description=entry[1], cldr=False)
@@ -38,7 +42,7 @@ def load_values(db_session: session, module):
 
     data_quantity = getattr(module, "DATA_QUANTITY")
     data_unspecific = getattr(module, "DATA_UNSPECIFIC")
-    add_custom_units(data_quantity, IngredientUnit.UnitType.QUANTITY)
+    add_quantity_units(data_quantity, IngredientUnit.UnitType.QUANTITY)
     add_custom_units(data_unspecific, IngredientUnit.UnitType.UNSPECIFIC)
 
     db_session.commit()

@@ -13,31 +13,134 @@
   <property name="windowTitle">
    <string>Data Editor</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QSplitter::handle { border: 2px outset darkgrey; }</string>
+  </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QColumnView" name="dataColumnView">
-      <property name="focusPolicy">
-       <enum>Qt::NoFocus</enum>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <property name="contextMenuPolicy">
-       <enum>Qt::ActionsContextMenu</enum>
-      </property>
-      <property name="dragEnabled">
-       <bool>true</bool>
-      </property>
-      <property name="dragDropOverwriteMode">
-       <bool>true</bool>
-      </property>
-      <property name="dragDropMode">
-       <enum>QAbstractItemView::DragDrop</enum>
-      </property>
-      <property name="defaultDropAction">
-       <enum>Qt::MoveAction</enum>
-      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Items</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QSplitter" name="splitter">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <widget class="QColumnView" name="dataColumnView">
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="contextMenuPolicy">
+            <enum>Qt::ActionsContextMenu</enum>
+           </property>
+           <property name="dragEnabled">
+            <bool>true</bool>
+           </property>
+           <property name="dragDropOverwriteMode">
+            <bool>true</bool>
+           </property>
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::DragDrop</enum>
+           </property>
+           <property name="defaultDropAction">
+            <enum>Qt::MoveAction</enum>
+           </property>
+          </widget>
+          <widget class="QStackedWidget" name="stackedWidget">
+           <widget class="QWidget" name="page"/>
+           <widget class="QWidget" name="page_2"/>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Unit Conversion Table</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QRadioButton" name="massRadioButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Mass</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../resources/resources.qrc">
+              <normaloff>:/icons/weight.png</normaloff>:/icons/weight.png</iconset>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">unitButtonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="volumeRadioButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Volume</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../resources/resources.qrc">
+              <normaloff>:/icons/beaker.png</normaloff>:/icons/beaker.png</iconset>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">unitButtonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="quantityRadioButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Quantity</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../resources/resources.qrc">
+              <normaloff>:/icons/sum.png</normaloff>:/icons/sum.png</iconset>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">unitButtonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableView" name="unitConversionTableView"/>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -117,4 +220,7 @@
   <include location="../../resources/resources.qrc"/>
  </resources>
  <connections/>
+ <buttongroups>
+  <buttongroup name="unitButtonGroup"/>
+ </buttongroups>
 </ui>

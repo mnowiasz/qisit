@@ -643,7 +643,10 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
                 recipe_window.close()
         if self._data_editor:
             self._data_editor.close()
-        self._session.commit()
+        if self.modified:
+            self._session.rollback()
+            self.modified = False
+
         self._save_ui_states()
         event.accept()
 
