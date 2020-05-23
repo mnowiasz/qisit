@@ -16,17 +16,17 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 import typing
+
 from PyQt5 import QtCore, QtGui
-from sqlalchemy import orm, func, text
 from babel.numbers import format_decimal, parse_decimal, NumberFormatError
 from babel.units import format_unit
+from sqlalchemy import orm
 
-from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
 
-class ConversionTableModel(QtCore.QAbstractTableModel):
 
+class ConversionTableModel(QtCore.QAbstractTableModel):
     changed = QtCore.pyqtSignal()
     """ Data have been changed """
 
@@ -35,19 +35,22 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         self._session = session
         self._unit_list = []
 
-        self._baseunit_font = QtGui.QFont()
-        self._baseunit_font.setBold(True)
+        self.bold_font = QtGui.QFont()
+        self.bold_font.setBold(True)
+
+        # Default type when nothing has been set
         self._unit_type = data.IngredientUnit.UnitType.MASS
 
     def load_model(self, unit_type: data.IngredientUnit.UnitType):
         self.beginResetModel()
         self._unit_list = []
-        self._unit_list = self._session.query(data.IngredientUnit).filter(data.IngredientUnit.type_ == unit_type).order_by(data.IngredientUnit.factor).all()
+        self._unit_list = self._session.query(data.IngredientUnit).filter(
+            data.IngredientUnit.type_ == unit_type).order_by(data.IngredientUnit.factor).all()
         self._unit_type = unit_type
         self.endResetModel()
 
     def reload_model(self):
-        self.load_model(unit_type = self._unit_type)
+        self.load_model(unit_type=self._unit_type)
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
         return len(self._unit_list)
@@ -57,25 +60,26 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         index_column = index.column()
 
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
-            if index_row == index_column:
-                return QtCore.QVariant(1)
-            # Calculate
+
             unit_horizontal = self._unit_list[index_column]
             unit_vertical = self._unit_list[index_row]
-            if unit_vertical.factor is None or unit_horizontal.factor is None:
-                # Bug from initializing the database with wrong defaults
-                value = None
-            else:
-                value = unit_vertical.factor/ unit_horizontal.factor
+
+            value = None
+
+            if index_row == index_column:
+                value = 1
+
+            # Compensate for a bug initialzing the database with wrong defaults
+            elif unit_vertical.factor is not None and unit_horizontal.factor is not None:
+                value = unit_vertical.factor / unit_horizontal.factor
             if value:
                 if unit_horizontal.cldr and role == QtCore.Qt.DisplayRole:
                     return QtCore.QVariant(format_unit(value, unit_horizontal.name, length="short"))
                 return QtCore.QVariant(format_decimal(value))
-            else:
-                return None
+
         if role == QtCore.Qt.FontRole:
             if index_row == index_column:
-                return self._baseunit_font
+                return self.bold_font
 
         return None
 
@@ -86,36 +90,42 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         if index_row == index_column:
             # Shouldn't happen
             return False
+
         unit_horizontal = self._unit_list[index_column]
         unit_vertical = self._unit_list[index_row]
         factor = unit_horizontal.factor
         if factor is None:
             # Bug from initializing the database with wrong defaults
             factor = 1.0
+
         if unit_vertical in data.IngredientUnit.base_units.values():
+            # Should also not happen - flags should have been set
             return False
 
-        new_value = nullify(value)
-        number = 0
-        if new_value is None:
+        value = nullify(value)
+        if value is None:
             return False
         try:
-            number = float(parse_decimal(new_value))
+            value = float(parse_decimal(value))
         except NumberFormatError:
+            # The user has entered something strange.
+            # TODO: Tell him so
             return False
 
-        if number == 0:
+        if value == 0:
             return False
 
         self.changed.emit()
-        unit_vertical.factor = number * factor
+        unit_vertical.factor = value * factor
         if unit_horizontal.factor is None:
-            # Correct bug
+            # Compensate for init bug
             unit_horizontal.factor = 1.0
         self.reload_model()
         return True
 
     def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...) -> typing.Any:
+
+        # Both horizontal and vertical header display the same unit
         unit = self._unit_list[section]
         if role == QtCore.Qt.DisplayRole:
             if orientation == QtCore.Qt.Vertical:
@@ -123,11 +133,12 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
             return QtCore.QVariant(unit.unit_string())
         if role == QtCore.Qt.FontRole:
             if unit in data.IngredientUnit.base_units.values():
-                return self._baseunit_font
+                return self.bold_font
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         flags = QtCore.Qt.ItemIsEnabled
         if index.row() != index.column():
+            # A vertical row containing a base unit is immutable
             unit_vertical = self._unit_list[index.row()]
             if unit_vertical not in data.IngredientUnit.base_units.values():
                 flags |= QtCore.Qt.ItemIsEditable
@@ -135,4 +146,3 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
 
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
         return len(self._unit_list)
-
