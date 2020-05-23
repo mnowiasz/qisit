@@ -300,6 +300,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                             if target_item not in recipe.categories:
                                 recipe.categories.append(target_item)
                             recipe.categories.remove(source_item)
+                            self._session.merge(recipe)
                     elif self.root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
                         self._session.query(data.IngredientListEntry).filter(
                             data.IngredientListEntry.ingredient_id == source_item.id).update(
