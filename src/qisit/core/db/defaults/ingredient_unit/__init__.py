@@ -22,14 +22,10 @@ from . import cldr
 
 
 def load_values(db_session: session, module):
-    def add_cldr_units(data, unit_type: IngredientUnit.UnitType):
+    def add_units(data, unit_type: IngredientUnit.UnitType, is_cldr: bool):
         for entry in data:
-            unit = IngredientUnit(type_=unit_type, name=entry[0], factor=entry[1], description=entry[2], cldr=True)
+            unit = IngredientUnit(type_=unit_type, name=entry[0], factor=entry[1], description=entry[2], cldr=is_cldr)
             db_session.add(unit)
-
-    def add_quantity_units(data, unit_type: IngredientUnit.UnitType):
-        for entry in data:
-            unit = IngredientUnit(type_=unit_type, name=entry[0], factor=entry[1], description=entry[2], cldr=False)
 
     def add_custom_units(data, unit_type: IngredientUnit.UnitType):
         for entry in data:
@@ -37,12 +33,13 @@ def load_values(db_session: session, module):
             db_session.add(unit)
 
 
-    add_cldr_units(cldr.DATA_MASS, IngredientUnit.UnitType.MASS)
-    add_cldr_units(cldr.DATA_VOLUME, IngredientUnit.UnitType.VOLUME)
+    add_units(cldr.DATA_MASS, IngredientUnit.UnitType.MASS, is_cldr=True)
+    add_units(cldr.DATA_VOLUME, IngredientUnit.UnitType.VOLUME, is_cldr=True)
 
     data_quantity = getattr(module, "DATA_QUANTITY")
+    add_units(data_quantity, IngredientUnit.UnitType.QUANTITY, is_cldr=False)
+
     data_unspecific = getattr(module, "DATA_UNSPECIFIC")
-    add_quantity_units(data_quantity, IngredientUnit.UnitType.QUANTITY)
     add_custom_units(data_unspecific, IngredientUnit.UnitType.UNSPECIFIC)
 
     db_session.commit()
