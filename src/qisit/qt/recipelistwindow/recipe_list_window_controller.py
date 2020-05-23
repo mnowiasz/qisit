@@ -641,6 +641,8 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
             for recipe_window in self._recipe_windows.values():
                 recipe_window.destroyed.disconnect()
                 recipe_window.close()
+        if self._data_editor:
+            self._data_editor.close()
         self._session.commit()
         self._save_ui_states()
         event.accept()

@@ -72,6 +72,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.actionDelete.triggered.connect(self.actionDelete_triggered)
         self.actionSave.triggered.connect(self.actionSave_triggered)
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
+        self.dataColumnView.addAction(self.actionDelete)
         self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
         self.dataColumnView.selectionModel().selectionChanged.connect(self.dataColumnView_selectionChanged)
 
