@@ -19,6 +19,7 @@ import typing
 from PyQt5 import QtCore, QtGui
 from sqlalchemy import orm, func, text
 from babel.numbers import format_decimal
+from babel.units import format_unit
 
 from qisit import translate
 from qisit.core.db import data
@@ -59,6 +60,8 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
             else:
                 value = unit_vertical.factor/ unit_horizontal.factor
             if value:
+                if unit_horizontal.cldr:
+                    return QtCore.QVariant(format_unit(value, unit_horizontal.name, length="short"))
                 return QtCore.QVariant(format_decimal(value))
             else:
                 return None
@@ -69,6 +72,8 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
     def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...) -> typing.Any:
         unit = self._unit_list[section]
         if role == QtCore.Qt.DisplayRole:
+            if orientation == QtCore.Qt.Vertical:
+                return QtCore.QVariant(f"1 {unit.unit_string()} = ")
             return QtCore.QVariant(unit.unit_string())
         if role == QtCore.Qt.FontRole:
             if unit in data.IngredientUnit.base_units.values():
