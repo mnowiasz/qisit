@@ -54,12 +54,14 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
             unit_horizontal = self._unit_list[index_column]
             unit_vertical = self._unit_list[index_row]
             if unit_vertical.factor is None or unit_horizontal.factor is None:
-                # Bug from defaults!
-                value = 0
+                # Bug from initializing the database with wrong defaults
+                value = None
             else:
                 value = unit_vertical.factor/ unit_horizontal.factor
-
-            return QtCore.QVariant(format_decimal(value))
+            if value:
+                return QtCore.QVariant(format_decimal(value))
+            else:
+                return None
         if role == QtCore.Qt.FontRole:
             if index_row == index_column:
                 return self._baseunit_font

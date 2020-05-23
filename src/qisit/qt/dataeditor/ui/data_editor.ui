@@ -55,6 +55,9 @@
            <property name="defaultDropAction">
             <enum>Qt::MoveAction</enum>
            </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
           </widget>
           <widget class="QStackedWidget" name="stackedWidget">
            <widget class="QWidget" name="page"/>

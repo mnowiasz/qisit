@@ -36,6 +36,7 @@ class Ui_dataEditor(object):
         self.dataColumnView.setDragDropOverwriteMode(True)
         self.dataColumnView.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.dataColumnView.setDefaultDropAction(QtCore.Qt.MoveAction)
+        self.dataColumnView.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.dataColumnView.setObjectName("dataColumnView")
         self.stackedWidget = QtWidgets.QStackedWidget(self.splitter)
         self.stackedWidget.setObjectName("stackedWidget")
