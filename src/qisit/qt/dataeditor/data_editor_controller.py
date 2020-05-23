@@ -16,17 +16,14 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
-from sqlalchemy import create_engine, exc, func, orm
-import typing
-from qisit import translate
-from qisit.core import db
+from sqlalchemy import orm
+
 from qisit.core.db import data
-from qisit.core.util import nullify
-from qisit.qt.dataeditor.ui import data_editor
 from qisit.qt.dataeditor import data_editor_model
+from qisit.qt.dataeditor.ui import data_editor
+
 
 class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
-
     # ToDo: Deduplicate code (taken from recipe_window_controller
     class _Decorators(object):
         @classmethod
@@ -57,7 +54,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     recipeDoubleClicked = QtCore.pyqtSignal(data.Recipe)
     """ Emitted when the user double clicked on a recipe"""
 
-    def __init__(self, session : orm.Session):
+    def __init__(self, session: orm.Session):
         super().__init__()
         super(QtWidgets.QMainWindow, self).__init__()
         self._session = session
@@ -69,6 +66,15 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.dataColumnView.setModel(self._model)
         self.init_ui()
 
+    def init_ui(self):
+        self.setWindowTitle(f"{self.windowTitle()} [*]")
+        self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
+        self.actionDelete.triggered.connect(self.actionDelete_triggered)
+        self.actionSave.triggered.connect(self.actionSave_triggered)
+        self.actionRevert.triggered.connect(self.actionRevert_triggered)
+        self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
+        self.dataColumnView.selectionModel().selectionChanged.connect(self.dataColumnView_selectionChanged)
+
     @property
     def modified(self) -> bool:
         return self.isWindowModified()
@@ -79,18 +85,16 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.actionSave.setEnabled(modified)
         self.actionRevert.setEnabled(modified)
 
+    def actionDelete_triggered(self, checked: bool = False):
+        for index in self.dataColumnView.selectedIndexes():
+            if self._model.is_deletable(index):
+                self._model.delete_item(index)
+
     def actionRevert_triggered(self, checked: bool = False):
         self.revert_data()
 
     def actionSave_triggered(self, checked: bool = False):
         self.save_data()
-
-    def init_ui(self):
-        self.setWindowTitle(f"{self.windowTitle()} [*]")
-        self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
-        self.actionSave.triggered.connect(self.actionSave_triggered)
-        self.actionRevert.triggered.connect(self.actionRevert_triggered)
-        self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """
@@ -109,17 +113,44 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         event.accept()
 
     def dataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
+        """
+        User double clicked on an item
+        Args:
+            index ():  The item
+
+        Returns:
+
+        """
         column = index.internalId()
         row = index.row()
         recipe = None
+        # Find out the index that contain a recipe
         if column == self._model.Columns.RECIPES:
+            # Like the column says - always recipes
             recipe = self._model.get_item(row, column)
         elif column == self._model.Columns.REFERENCED:
-            root_row = self._model.root_row()
-            if root_row not in (self._model.RootItems.INGREDIENTS, self._model.RootItems.INGREDIENTUNITS):
+            if self._model.root_row not in (self._model.RootItems.INGREDIENTS, self._model.RootItems.INGREDIENTUNITS):
                 recipe = self._model.get_item(row, column)
         if recipe is not None:
-           self.recipeDoubleClicked.emit(recipe)
+            self.recipeDoubleClicked.emit(recipe)
+
+    def dataColumnView_selectionChanged(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
+        """
+        The selection has been changed. Used to enable/disable the delete action
+
+        Args:
+            selected (): Selected indexes
+            deselected (): Deselected index
+
+        Returns:
+
+        """
+
+        delete_action_enabled = False
+
+        for index in selected.indexes():
+            delete_action_enabled |= self._model.is_deletable(index)
+        self.actionDelete.setEnabled(delete_action_enabled)
 
     def revert_data(self):
         """
@@ -153,11 +184,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.dataCommited.emit(self._model.affected_recipe_ids)
         self._model.affected_recipe_ids.clear()
 
-
     @_Decorators.change
     def set_modified(self):
         """ Nothing to do here, the decorator does it work """
         pass
-
-
-

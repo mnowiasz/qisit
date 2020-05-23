@@ -118,6 +118,10 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 data.YieldUnitName, _translate("DataEditor", "Yield units"), ":/icons/plates.png"),
         }
 
+    @property
+    def root_row(self) -> int:
+        return self._parent_row[self.Columns.ROOT]
+
     def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
                         parent: QtCore.QModelIndex) -> bool:
 
@@ -168,7 +172,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
             return QtCore.QVariant()
 
-        root_row = self._parent_row[self.Columns.ROOT]
         if column == self.Columns.ITEMS:
             item = self._item_lists[self.Columns.ITEMS][row]
             count = item[1]
@@ -177,7 +180,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
             if role == QtCore.Qt.DisplayRole:
                 title = f"{item[0].name} ({count})"
-                if root_row == self.RootItems.INGREDIENTUNITS:
+                if self.root_row == self.RootItems.INGREDIENTUNITS:
                     # Display the unit in the user's locale
                     if item[0].cldr:
                         title = f"{item[0].unit_string()} ({count})"
@@ -186,7 +189,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             if role == QtCore.Qt.EditRole:
                 return QtCore.QVariant(item[0].name)
 
-            if root_row == self.RootItems.INGREDIENTUNITS:
+            if self.root_row == self.RootItems.INGREDIENTUNITS:
                 ingredient_unit = item[0]
                 is_base_unit = ingredient_unit in data.IngredientUnit.base_units.values()
 
@@ -202,7 +205,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
             if role == QtCore.Qt.UserRole:
-                if root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
+                if self.root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
                     # Ingredients and ingredient units  have a fourth column - the recipe
                     return 1
                 else:
@@ -214,7 +217,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 # Ingredientlist entries displayed there. Recipes have got a title, all other tables a name (this was
                 # probably an oversight, if a recipe would have a name instead of a title, the code underneath would be
                 # unnecessary). But too much bother to change the database now.
-                if root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
+                if self.root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
                     return QtCore.QVariant(item.name)
                 else:
                     return QtCore.QVariant(item.title)
@@ -228,6 +231,28 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 return 0
         return QtCore.QVariant(None)
 
+    def delete_item(self, index: QtCore.QModelIndex):
+        """
+        Delete an item (if allowed, that is)
+
+        Args:
+            index (): The index
+
+        Returns:
+
+        """
+
+        if self.is_deletable(index):
+            self.changed.emit()
+            index_row = index.row()
+            self.beginRemoveRows(self.createIndex(self.root_row, 0, self.Columns.ROOT), index_row, index_row)
+            the_item = self._item_lists[index.internalId()][index_row][0]
+            recipe_ids = [recipe.id for recipe in the_item.recipes]
+            self.affected_recipe_ids = self.affected_recipe_ids.union(recipe_ids)
+            self._session.delete(the_item)
+            self.endRemoveRows()
+
+
     def dropMimeData(self, mimedata: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
                      parent: QtCore.QModelIndex) -> bool:
 
@@ -236,7 +261,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # Not used  currently - only drops on the Item columns are allowed
         target_column = parent.internalId()
 
-        root_row = self._parent_row[self.Columns.ROOT]
         # The affeced recipes
         recipes_ids = set()
         self.changed.emit()
@@ -251,22 +275,22 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 # Merging an item with itself is useless
                 if source_item != target_item:
                     recipes_ids = recipes_ids.union([recipe.id for recipe in source_item.recipes])
-                    self.beginRemoveRows(self.createIndex(root_row, 0, self.Columns.ROOT), index_row, index_row)
+                    self.beginRemoveRows(self.createIndex(self.root_row, 0, self.Columns.ROOT), index_row, index_row)
 
                     the_table = None
-                    if root_row in (self.RootItems.AUTHOR, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
+                    if self.root_row in (self.RootItems.AUTHOR, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
                         the_query = self._session.query(data.Recipe)
-                        if root_row == self.RootItems.AUTHOR:
+                        if self.root_row == self.RootItems.AUTHOR:
                             the_query.filter(data.Recipe.author_id == source_item.id).update(
                                 {data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
-                        elif root_row == self.RootItems.CUISINE:
+                        elif self.root_row == self.RootItems.CUISINE:
                             the_query.filter(data.Recipe.cuisine_id == source_item.id).update(
                                 {data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
-                        elif root_row == self.RootItems.YIELD_UNITS:
+                        elif self.root_row == self.RootItems.YIELD_UNITS:
                             the_query.query(data.Recipe).filter(data.Recipe.yield_unit_id == source_item.id).update(
                                 {data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
 
-                    elif root_row == self.RootItems.CATEGORIES:
+                    elif self.root_row == self.RootItems.CATEGORIES:
                         # Categories are special. TODO: Maybe construct a (rather complicated, probably) Query instead
                         # of this
 
@@ -276,11 +300,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                             if target_item not in recipe.categories:
                                 recipe.categories.append(target_item)
                             recipe.categories.remove(source_item)
-                    elif root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
+                    elif self.root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
                         self._session.query(data.IngredientListEntry).filter(
                             data.IngredientListEntry.ingredient_id == source_item.id).update(
                             {data.IngredientListEntry.ingredient_id: target_item.id}, synchronize_session='evaluate')
-                    elif root_row == self.RootItems.INGREDIENTUNITS:
+                    elif self.root_row == self.RootItems.INGREDIENTUNITS:
                         self._session.query(data.IngredientListEntry).filter(
                             data.IngredientListEntry.unit_id == source_item.id).update(
                             {data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
@@ -290,11 +314,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 # Append
                 target_item = self._item_lists[target_column][target_row][0]
                 self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
-                if root_row == self.RootItems.CUISINE:
+                if self.root_row == self.RootItems.CUISINE:
                     recipe = self._item_lists[index_column][index_row]
                     recipe.cuisine = target_item
 
-                elif root_row == self.RootItems.INGREDIENTS:
+                elif self.root_row == self.RootItems.INGREDIENTS:
                     ingredient_list_entry = self._item_lists[index_column][index_row]
                     ingredient_list_entry.ingredient = target_item
                 self._session.refresh(target_item)
@@ -317,11 +341,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             is_drag_enabled = (column == self.Columns.ITEMS or self._parent_row[self.Columns.ROOT] in (
                 self.RootItems.INGREDIENTS, self.RootItems.CUISINE))
 
-            root_row = self._parent_row[self.Columns.ROOT]
-
             if column == self.Columns.ITEMS:
                 is_drop_enabled = True
-                if root_row == self.RootItems.INGREDIENTUNITS:
+                if self.root_row == self.RootItems.INGREDIENTUNITS:
                     ingredient_unit = self._item_lists[self.Columns.ITEMS][index.row()][0]
                     is_editable = not ingredient_unit.cldr and not ingredient_unit in data.IngredientUnit.base_units.values()
                     is_drag_enabled = is_editable
@@ -329,7 +351,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     is_editable = True
                     is_drag_enabled = True
             else:
-                is_editable = root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS)
+                is_editable = self.root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS)
 
         if is_editable:
             flags |= QtCore.Qt.ItemIsEditable
@@ -359,6 +381,38 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             self._parent_row[parent_column] = parent.row()
             return self.createIndex(row, 0, parent_column + 1)
 
+    def is_deletable(self, index: QtCore.QModelIndex) -> bool:
+        """
+        Returns if an item is deletable
+
+        Args:
+            index (): The index
+
+        Returns:
+            True, if it can be deleted, false if not
+        """
+
+        column = index.internalId()
+        # All deletable items are in the Items column
+        if column != self.Columns.ITEMS:
+            return False
+
+        # These can be deleted in any case
+        if self.root_row in (self.RootItems.AUTHOR, self.RootItems.CATEGORIES, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
+            return True
+
+        # All other items may be only deleted if they are "empty" i.e. have no children
+        number_of_items = index.data(QtCore.Qt.UserRole)
+        if number_of_items > 0:
+            return False
+
+        # Last but not least: The base units cannot be deleted
+        if self.root_row == self.RootItems.INGREDIENTUNITS:
+            ingredient_unit = self._item_lists[self.Columns.ITEMS][index.row()][0]
+            return ingredient_unit not in data.IngredientUnit.base_units
+
+        return True
+
     def mimeData(self, indexes: typing.Iterable[QtCore.QModelIndex]) -> QtCore.QMimeData:
         index_list = [(index.row(), index.internalId()) for index in indexes]
 
@@ -385,9 +439,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         self.affected_recipe_ids.clear()
 
-    def root_row(self) -> int:
-        return self._parent_row[self.Columns.ROOT]
-
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
         if parent.row() == -1:
             return self.RootItems.YIELD_UNITS + 1
@@ -405,7 +456,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
             # Construct the query
             query = None
-
             if parent_row == self.RootItems.INGREDIENTUNITS:
                 # Ingredients (or better: amount units) are rather special - due to the handling of
                 # CLDR the query has too little in common with the other ones. There's also the one
@@ -436,16 +486,15 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[self.Columns.ITEMS][parent_row][0]
-            root_row = self._parent_row[self.Columns.ROOT]
 
             # Copy the lists. Otherwise - when cleared - they would be erased from the
             # database itself: items/recipes are sqlalchemy lists, very convenient - but changes
             # there will cause database changes, too, so clearing() such a list will cause the references
             # to be deleted for real.
             item_list = None
-            if root_row == self.RootItems.INGREDIENTS:
+            if self.root_row == self.RootItems.INGREDIENTS:
                 item_list = item.items
-            elif root_row == self.RootItems.INGREDIENTUNITS:
+            elif self.root_row == self.RootItems.INGREDIENTUNITS:
                 item_list = item.ingredientlist
             else:
                 item_list = item.recipes

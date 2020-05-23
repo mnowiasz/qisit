@@ -34,7 +34,7 @@ class Category(db.Base):
     name in the database
     """
 
-    recipes = relationship("Recipe", secondary="category_list", cascade="all", passive_deletes=True,
+    recipes = relationship("Recipe", secondary="category_list", cascade="none", passive_deletes=True,
                            back_populates="categories", order_by="Recipe.title")
     """ The lists of recipes belonging to the category  """
 
