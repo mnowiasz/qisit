@@ -56,7 +56,7 @@
             <enum>Qt::MoveAction</enum>
            </property>
            <property name="selectionMode">
-            <enum>QAbstractItemView::SingleSelection</enum>
+            <enum>QAbstractItemView::ExtendedSelection</enum>
            </property>
           </widget>
           <widget class="QStackedWidget" name="stackedWidget">
@@ -140,7 +140,11 @@
          </layout>
         </item>
         <item>
-         <widget class="QTableView" name="unitConversionTableView"/>
+         <widget class="QTableView" name="unitConversionTableView">
+          <property name="selectionMode">
+           <enum>QAbstractItemView::NoSelection</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

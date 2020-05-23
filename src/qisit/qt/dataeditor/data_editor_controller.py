@@ -66,6 +66,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.dataColumnView.setModel(self._item_model)
 
         self._unit_conversion_model = conversion_table_model.ConversionTableModel(self._session)
+        self._unit_conversion_model.changed.connect(self.set_modified)
         self.unitConversionTableView.setModel(self._unit_conversion_model)
         self.init_ui()
 
@@ -179,6 +180,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._transaction_started = False
         self._item_model.reset()
         self.dataColumnView.reset()
+        self._unit_conversion_model.reload_model()
         self.modified = False
 
     def save_data(self):
