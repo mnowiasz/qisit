@@ -42,7 +42,7 @@ class Ingredient(db.Base):
     """ The "ingredient" is in fact a name of a group ("For the sauce") """
 
     icon = sql.Column(sql.LargeBinary, nullable=True, default=None)
-    """ An optional icon for this ingredient group """
+    """ An optional icon for this ingredient  """
 
     items = orm.relationship("IngredientListEntry", back_populates="ingredient")
     """ All items referring to this ingredient """

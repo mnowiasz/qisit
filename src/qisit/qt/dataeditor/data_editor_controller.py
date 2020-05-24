@@ -17,6 +17,8 @@
 
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 from sqlalchemy import orm
+import typing
+from enum import IntEnum
 
 from qisit.core.db import data
 from qisit.qt.dataeditor import data_editor_model, conversion_table_model
@@ -47,6 +49,11 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                 method(self, *args, **kwargs)
 
             return wrapped
+
+    # The Indices for the stacked item widget
+    class StackedItems(IntEnum):
+        EMPTY = 0
+
 
     dataCommited = QtCore.pyqtSignal(set)
     """ Emitted (including a list/set of affected Recipe IDs) when the data has been committed """
@@ -166,6 +173,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         for index in selected.indexes():
             delete_action_enabled |= self._item_model.is_deletable(index)
         self.actionDelete.setEnabled(delete_action_enabled)
+        self.switch_stacked_widget(selected.indexes())
+
 
     def revert_data(self):
         """
@@ -204,6 +213,25 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     def set_modified(self):
         """ Nothing to do here, the decorator does it work """
         pass
+
+    def switch_stacked_widget(self, selected_indexes: typing.List[QtCore.QModelIndex]):
+        """
+        Switch the stacked widget accordingly
+
+        Args:
+            selected_indexes: The selected indexs
+
+        Returns:
+
+        """
+
+        if len(selected_indexes) != 1:
+            self.stackedWidget.setCurrentIndex(self.StackedItems.EMPTY)
+            self.nameLineEdit.setReadOnly(True)
+            self.nameLineEdit.clear()
+        else:
+            selected_index = selected_indexes[0]
+            print(f"Row = {selected_index.row()}, column = {selected_index.column()}, flags = {selected_index.flags()}")
 
     def unitbutton_clicked(self, button_id: int):
         self._unit_conversion_model.load_model(button_id)
