@@ -28,7 +28,7 @@ DATA_UNSPECIFIC = (
     ("etwas", "Etwas (allgemein"),
     ("Becher", "Becher (allgemein)"),
     ("Beutel", "Beutel (allgemein)"),
-    ("Blatt, Blatt (allgemein)"),
+    ("Blatt", "Blatt (allgemein)"),
     ("Bl", "Blatt (allgemein)"),
     ("Bund", "Bund (Petersilie,..."),
     ("Dose", "Dose (unspezifische Größe)"),
