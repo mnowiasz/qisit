@@ -273,49 +273,48 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 target_item = self._item_lists[target_column][target_row][0]
 
                 # Merging an item with itself is useless
-                if source_item != target_item:
-                    recipes_ids = recipes_ids.union([recipe.id for recipe in source_item.recipes])
-                    self.beginRemoveRows(self.createIndex(self.root_row, 0, self.Columns.ROOT), index_row, index_row)
-
-                    the_table = None
-                    if self.root_row in (self.RootItems.AUTHOR, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
-                        the_query = self._session.query(data.Recipe)
-                        if self.root_row == self.RootItems.AUTHOR:
-                            the_query.filter(data.Recipe.author_id == source_item.id).update(
-                                {data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
-                        elif self.root_row == self.RootItems.CUISINE:
-                            the_query.filter(data.Recipe.cuisine_id == source_item.id).update(
-                                {data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
-                        elif self.root_row == self.RootItems.YIELD_UNITS:
-                            the_query.filter(data.Recipe.yield_unit_id == source_item.id).update(
-                                {data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
-
-                    elif self.root_row == self.RootItems.CATEGORIES:
-                        # Categories are special. TODO: Maybe construct a (rather complicated, probably) Query instead
-                        # of this
-
-                        # Need to copy the list recipes - because making changes will alter the original recipes
-                        recipes = [recipe for recipe in source_item.recipes]
-                        for recipe in recipes:
-                            if target_item not in recipe.categories:
-                                recipe.categories.append(target_item)
-                            recipe.categories.remove(source_item)
-                            self._session.merge(recipe)
-                    elif self.root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
-                        self._session.query(data.IngredientListEntry).filter(
-                            data.IngredientListEntry.ingredient_id == source_item.id).update(
-                            {data.IngredientListEntry.ingredient_id: target_item.id}, synchronize_session='evaluate')
-                    elif self.root_row == self.RootItems.INGREDIENTUNITS:
-                        self._session.query(data.IngredientListEntry).filter(
-                            data.IngredientListEntry.unit_id == source_item.id).update(
-                            {data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
-                    self._session.expire_all()
-                    self._session.delete(source_item)
-                else:
-                    # Dropped on itself
+                if source_item == target_item:
                     return False
+
+                recipes_ids = recipes_ids.union([recipe.id for recipe in source_item.recipes])
+                self.beginRemoveRows(self.createIndex(self.root_row, 0, self.Columns.ROOT), index_row, index_row)
+
+                the_table = None
+                if self.root_row in (self.RootItems.AUTHOR, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
+                    the_query = self._session.query(data.Recipe)
+                    if self.root_row == self.RootItems.AUTHOR:
+                        the_query.filter(data.Recipe.author_id == source_item.id).update(
+                            {data.Recipe.author_id: target_item.id}, synchronize_session='evaluate')
+                    elif self.root_row == self.RootItems.CUISINE:
+                        the_query.filter(data.Recipe.cuisine_id == source_item.id).update(
+                            {data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
+                    elif self.root_row == self.RootItems.YIELD_UNITS:
+                        the_query.filter(data.Recipe.yield_unit_id == source_item.id).update(
+                            {data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
+
+                elif self.root_row == self.RootItems.CATEGORIES:
+                    # Categories are special. TODO: Maybe construct a (rather complicated, probably) Query instead
+                    # of this
+
+                    # Need to copy the list recipes - because making changes will alter the original recipes
+                    recipes = [recipe for recipe in source_item.recipes]
+                    for recipe in recipes:
+                        if target_item not in recipe.categories:
+                            recipe.categories.append(target_item)
+                        recipe.categories.remove(source_item)
+                        self._session.merge(recipe)
+                elif self.root_row in (self.RootItems.INGREDIENTGROUPS, self.RootItems.INGREDIENTS):
+                    self._session.query(data.IngredientListEntry).filter(
+                        data.IngredientListEntry.ingredient_id == source_item.id).update(
+                        {data.IngredientListEntry.ingredient_id: target_item.id}, synchronize_session='evaluate')
+                elif self.root_row == self.RootItems.INGREDIENTUNITS:
+                    self._session.query(data.IngredientListEntry).filter(
+                        data.IngredientListEntry.unit_id == source_item.id).update(
+                        {data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
+                self._session.expire_all()
+                self._session.delete(source_item)
             else:
-                # Append
+                # Append operation. Only allowed on Cuisine or Ingredients
                 target_item = self._item_lists[target_column][target_row][0]
                 self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
                 if self.root_row == self.RootItems.CUISINE:
@@ -513,8 +512,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         return len(self._item_lists[column])
 
     def setData(self, index: QtCore.QModelIndex, value: typing.Any, role: int = ...) -> bool:
+        # TODO: Maybe test for the role?
         value = nullify(value)
-
         if value is None:
             return False
 
@@ -548,4 +547,5 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self.changed.emit()
         self.affected_recipe_ids = self.affected_recipe_ids.union(changed_recipes)
         item.name = value
+        self.dataChanged.emit(index, index)
         return True
