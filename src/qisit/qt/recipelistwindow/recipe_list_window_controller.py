@@ -44,13 +44,13 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         super().__init__()
         super(QtWidgets.QMainWindow, self).__init__()
 
-        self._settings = QtCore.QSettings()
+        settings = QtCore.QSettings()
         self._filter_set = set()
         self._session = session_
         self._about_dialog_controller = None
 
         self._translate = translate
-        recipes_per_page = int(self._settings.value("RecipeListWindow/RecipeTableView/main/recipes_per_page", 15))
+        recipes_per_page = int(settings.value("RecipeListWindow/RecipeTableView/main/recipes_per_page", 15))
         self.table_model = RecipeTableModel(session_, recipes_per_page=recipes_per_page)
         self.setupUi(self)
 
@@ -94,22 +94,24 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         """
 
-        self._settings.beginGroup("RecipeListWindow/window")
-        if self._settings.contains("geometry"):
-            self.restoreGeometry(self._settings.value("geometry"))
-        if self._settings.contains("state"):
-            self.restoreState(self._settings.value("state"))
-        self._settings.endGroup()
+        settings = QtCore.QSettings()
 
-        self._settings.beginGroup("RecipeListWindow/RecipeTableView")
-        if self._settings.contains("main/geometry"):
-            self.recipeTableView.restoreGeometry(self._settings.value("main/geometry"))
+        settings.beginGroup("RecipeListWindow/window")
+        if settings.contains("geometry"):
+            self.restoreGeometry(settings.value("geometry"))
+        if settings.contains("state"):
+            self.restoreState(settings.value("state"))
+        settings.endGroup()
 
-        if self._settings.contains("header/state"):
-            self.recipeTableView.horizontalHeader().restoreState(self._settings.value("header/state"))
-        if self._settings.contains("header/geometry"):
-            self.recipeTableView.horizontalHeader().restoreGeometry(self._settings.value("header/geometry"))
-        self._settings.endGroup()
+        settings.beginGroup("RecipeListWindow/RecipeTableView")
+        if settings.contains("main/geometry"):
+            self.recipeTableView.restoreGeometry(settings.value("main/geometry"))
+
+        if settings.contains("header/state"):
+            self.recipeTableView.horizontalHeader().restoreState(settings.value("header/state"))
+        if settings.contains("header/geometry"):
+            self.recipeTableView.horizontalHeader().restoreGeometry(settings.value("header/geometry"))
+        settings.endGroup()
 
     def _recipe_window_closed(self, id_: int):
         """ Called when a recipe window has been closed """

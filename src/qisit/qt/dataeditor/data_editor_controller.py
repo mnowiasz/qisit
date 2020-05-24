@@ -20,6 +20,8 @@ from sqlalchemy import orm
 import typing
 from enum import IntEnum
 
+from babel.numbers import format_decimal
+
 from qisit.core.db import data
 from qisit.qt.dataeditor import data_editor_model, conversion_table_model
 from qisit.qt.dataeditor.ui import data_editor
@@ -53,6 +55,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     # The Indices for the stacked item widget
     class StackedItems(IntEnum):
         EMPTY = 0
+        ITEM_DESCRIPTION = 1
+        ITEM_ICON = 2
+        ITEM_UNIT = 3
 
 
     dataCommited = QtCore.pyqtSignal(set)
@@ -77,6 +82,48 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.unitConversionTableView.setModel(self._unit_conversion_model)
         self.init_ui()
 
+    def _load_ui_states(self):
+        """
+        Loads the previously saved UI stated
+
+        Returns:
+
+        """
+
+        settings = QtCore.QSettings()
+        settings.beginGroup("DataEditor/window")
+        if settings.contains("geometry"):
+            self.restoreGeometry(settings.value("geometry"))
+        if settings.contains("state"):
+            self.restoreState(settings.value("state"))
+        settings.endGroup()
+
+        settings.beginGroup("DataEditor/splitter")
+        if settings.contains("state"):
+            self.splitter.restoreState(settings.value("state"))
+        if settings.contains("geometry"):
+            self.splitter.restoreGeometry(settings.value("geometry"))
+        settings.endGroup()
+
+    def _save_ui_states(self):
+        """
+        Saves the UI states (splitter, window...)
+
+        Returns:
+
+        """
+        settings = QtCore.QSettings()
+
+        settings.beginGroup("DataEditor/window")
+        settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("state", self.saveState())
+        settings.endGroup()
+
+        settings.beginGroup("DataEditor/splitter")
+        settings.setValue("geometry", self.splitter.saveGeometry())
+        settings.setValue("state", self.splitter.saveState())
+        settings.endGroup()
+
     def init_ui(self):
         self.setWindowTitle(f"{self.windowTitle()} [*]")
         self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
@@ -90,6 +137,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.unitButtonGroup.setId(self.volumeRadioButton, data.IngredientUnit.UnitType.VOLUME)
         self.unitButtonGroup.setId(self.quantityRadioButton, data.IngredientUnit.UnitType.QUANTITY)
         self.unitButtonGroup.buttonClicked[int].connect(self.unitbutton_clicked)
+        self._load_ui_states()
 
         selected_id = self.unitButtonGroup.checkedId()
         if selected_id == None:
@@ -132,6 +180,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         if self._transaction_started:
             self._session.rollback()
         self.modified = False
+        self._save_ui_states()
         event.accept()
 
     def dataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
@@ -225,13 +274,47 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         """
 
-        if len(selected_indexes) != 1:
+        if len(selected_indexes) == 1 and selected_indexes[0].flags() & QtCore.Qt.ItemIsEditable:
+            selected_index = selected_indexes[0]
+            model = self._item_model
+            column = selected_index.internalId()
+            item = None
+            if column == model.Columns.REFERENCED:
+                # Ingredient list items
+                item = model.get_item(selected_index.row(), column)
+            else:
+                item = model.get_item(selected_index.row(), column)[0]
+
+            self.nameLineEdit.setReadOnly(False)
+            self.nameLineEdit.setText(item.name)
+            if model.root_row in (model.RootItems.CATEGORIES, model.RootItems.INGREDIENTGROUPS) or column == model.Columns.REFERENCED:
+                self.stackedWidget.setCurrentIndex(self.StackedItems.EMPTY)
+                self.nameLineEdit.setText(item.name)
+            elif model.root_row in (model.RootItems.AUTHOR, model.RootItems.CUISINE, model.RootItems.YIELD_UNITS):
+                self.stackedWidget.setCurrentIndex(self.StackedItems.ITEM_DESCRIPTION)
+                if item.description is not None:
+                    self.descriptionTextEdit.setText(item.description)
+                else:
+                    self.descriptionTextEdit.clear()
+            elif model.root_row == model.RootItems.INGREDIENTS:
+                self.stackedWidget.setCurrentIndex((self.StackedItems.ITEM_ICON))
+                if item.icon:
+                    pass
+            elif model.root_row == model.RootItems.INGREDIENTUNITS:
+                self.stackedWidget.setCurrentIndex(self.StackedItems.ITEM_UNIT)
+                self.typeComboBox.setCurrentIndex(item.type_)
+                if item.factor is not None:
+                    self.factorLineEdit.setText(format_decimal(item.factor))
+                    self.baseUnitLabel.setText(data.IngredientUnit.base_units[item.type_].unit_string())
+                else:
+                    self.factorLineEdit.clear()
+        else:
             self.stackedWidget.setCurrentIndex(self.StackedItems.EMPTY)
             self.nameLineEdit.setReadOnly(True)
+            self.okButton.setEnabled(False)
+            self.cancelButton.setEnabled(False)
             self.nameLineEdit.clear()
-        else:
-            selected_index = selected_indexes[0]
-            print(f"Row = {selected_index.row()}, column = {selected_index.column()}, flags = {selected_index.flags()}")
+
 
     def unitbutton_clicked(self, button_id: int):
         self._unit_conversion_model.load_model(button_id)

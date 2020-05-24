@@ -62,11 +62,22 @@
           <widget class="QWidget" name="layoutWidget">
            <layout class="QVBoxLayout" name="verticalLayout">
             <item>
-             <widget class="QLineEdit" name="nameLineEdit">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QLabel" name="nameLabel">
+                <property name="text">
+                 <string>Name:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="nameLineEdit">
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QStackedWidget" name="stackedWidget">
@@ -77,10 +88,19 @@
               <widget class="QWidget" name="descriptionPage">
                <layout class="QVBoxLayout" name="verticalLayout_5">
                 <item>
-                 <widget class="QPlainTextEdit" name="descriptionTextEdit">
-                  <property name="enabled">
-                   <bool>true</bool>
+                 <widget class="QGroupBox" name="groupBox">
+                  <property name="title">
+                   <string>Description</string>
                   </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_8">
+                   <item>
+                    <widget class="QPlainTextEdit" name="descriptionTextEdit">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </widget>
                 </item>
                </layout>
@@ -146,7 +166,7 @@
                </layout>
               </widget>
               <widget class="QWidget" name="ingredientUnit">
-               <layout class="QVBoxLayout" name="verticalLayout_7">
+               <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
                  <layout class="QGridLayout" name="gridLayout">
                   <item row="1" column="0">
@@ -164,7 +184,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="QLineEdit" name="lineEdit"/>
+                   <widget class="QLineEdit" name="factorLineEdit"/>
                   </item>
                   <item row="1" column="2">
                    <widget class="QLabel" name="baseUnitLabel">
@@ -186,6 +206,15 @@
                     </property>
                     <item>
                      <property name="text">
+                      <string>Quantity</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="../../resources/resources.qrc">
+                       <normaloff>:/icons/sum.png</normaloff>:/icons/sum.png</iconset>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
                       <string>Mass</string>
                      </property>
                      <property name="icon">
@@ -204,15 +233,6 @@
                     </item>
                     <item>
                      <property name="text">
-                      <string>Quantity</string>
-                     </property>
-                     <property name="icon">
-                      <iconset resource="../../resources/resources.qrc">
-                       <normaloff>:/icons/sum.png</normaloff>:/icons/sum.png</iconset>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
                       <string>Unspecific</string>
                      </property>
                      <property name="icon">
@@ -225,7 +245,16 @@
                  </layout>
                 </item>
                 <item>
-                 <widget class="QPlainTextEdit" name="unitDescriptionTextEdit"/>
+                 <widget class="QGroupBox" name="groupBox_2">
+                  <property name="title">
+                   <string>Description</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_7">
+                   <item>
+                    <widget class="QPlainTextEdit" name="unitDescriptionTextEdit"/>
+                   </item>
+                  </layout>
+                 </widget>
                 </item>
                </layout>
               </widget>

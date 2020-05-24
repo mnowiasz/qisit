@@ -287,7 +287,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                             the_query.filter(data.Recipe.cuisine_id == source_item.id).update(
                                 {data.Recipe.cuisine_id: target_item.id}, synchronize_session='evaluate')
                         elif self.root_row == self.RootItems.YIELD_UNITS:
-                            the_query.query(data.Recipe).filter(data.Recipe.yield_unit_id == source_item.id).update(
+                            the_query.filter(data.Recipe.yield_unit_id == source_item.id).update(
                                 {data.Recipe.yield_unit_id: target_item.id}, synchronize_session='evaluate')
 
                     elif self.root_row == self.RootItems.CATEGORIES:
