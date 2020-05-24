@@ -648,12 +648,22 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
             self.modified = False
 
         self._save_ui_states()
+        QtCore.QCoreApplication.quit()
         event.accept()
 
     def dataeditor_commited(self, affected_recipe_ids: set):
         self.modified = True
         self.update_filters()
         self._reload_model()
+
+        # Note: This will create some surprising results if the recipe has been altered (and not saved) - the data
+        # concerning the recipe will be reset in the data editor. This is because of different transactions and
+        # rollbacks: The data editor commits its data into one transaction, the recipe window commits a rollback in
+        # another transaction
+        for recipe_id in affected_recipe_ids:
+            if recipe_id in self._recipe_windows:
+                self._recipe_windows[recipe_id].revert_data()
+
 
     def firstPageButton_clicked(self):
         """
@@ -722,9 +732,13 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         Returns:
 
         """
+
+        # TODO: Propagate this to all other Recipes
         self.modified = True
         self.update_filters()
         self._reload_model()
+        if self._data_editor:
+            self._data_editor.revert_data()
 
     def recipesPerPagecomboBox_activated(self, index: int):
         """
