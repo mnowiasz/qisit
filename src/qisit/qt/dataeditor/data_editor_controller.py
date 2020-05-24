@@ -77,6 +77,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._item_model.changed.connect(self.set_modified)
         self.dataColumnView.setModel(self._item_model)
 
+        self._selected_index = None
+
         self._unit_conversion_model = conversion_table_model.ConversionTableModel(self._session)
         self._unit_conversion_model.changed.connect(self.set_modified)
         self.unitConversionTableView.setModel(self._unit_conversion_model)
@@ -137,6 +139,12 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.unitButtonGroup.setId(self.volumeRadioButton, data.IngredientUnit.UnitType.VOLUME)
         self.unitButtonGroup.setId(self.quantityRadioButton, data.IngredientUnit.UnitType.QUANTITY)
         self.unitButtonGroup.buttonClicked[int].connect(self.unitbutton_clicked)
+
+        self.nameLineEdit.textEdited.connect(self.stackedwidget_edited)
+        self.descriptionTextEdit.textChanged.connect(self.stackedwidget_edited)
+        self.factorLineEdit.textEdited.connect(self.stackedwidget_edited)
+        self.typeComboBox.currentIndexChanged.connect(self.stackedwidget_edited)
+
         self._load_ui_states()
 
         selected_id = self.unitButtonGroup.checkedId()
@@ -263,6 +271,14 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         """ Nothing to do here, the decorator does it work """
         pass
 
+    def stackedwidget_edited(self):
+        """"
+        Data has been edited in one of the widgets
+        """
+
+        self.okButton.setEnabled(True)
+        self.cancelButton.setEnabled(True)
+
     def switch_stacked_widget(self, selected_indexes: typing.List[QtCore.QModelIndex]):
         """
         Switch the stacked widget accordingly
@@ -274,8 +290,14 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         """
 
+        self.okButton.setEnabled(False)
+        self.cancelButton.setEnabled(False)
+
         if len(selected_indexes) == 1 and selected_indexes[0].flags() & QtCore.Qt.ItemIsEditable:
+            self.descriptionTextEdit.blockSignals(True)
+            self.unitDescriptionTextEdit.blockSignals(True)
             selected_index = selected_indexes[0]
+            self._selected_index = selected_index
             model = self._item_model
             column = selected_index.internalId()
             item = None
@@ -308,12 +330,13 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                     self.baseUnitLabel.setText(data.IngredientUnit.base_units[item.type_].unit_string())
                 else:
                     self.factorLineEdit.clear()
+            self.descriptionTextEdit.blockSignals(False)
+            self.unitDescriptionTextEdit.blockSignals(False)
         else:
             self.stackedWidget.setCurrentIndex(self.StackedItems.EMPTY)
             self.nameLineEdit.setReadOnly(True)
-            self.okButton.setEnabled(False)
-            self.cancelButton.setEnabled(False)
             self.nameLineEdit.clear()
+            self._selected_index = None
 
 
     def unitbutton_clicked(self, button_id: int):

@@ -311,6 +311,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                             {data.IngredientListEntry.unit_id: target_item.id}, synchronize_session='evaluate')
                     self._session.expire_all()
                     self._session.delete(source_item)
+                else:
+                    # Dropped on itself
+                    return False
             else:
                 # Append
                 target_item = self._item_lists[target_column][target_row][0]
