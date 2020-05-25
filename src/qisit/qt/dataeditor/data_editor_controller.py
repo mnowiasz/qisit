@@ -21,7 +21,7 @@ import typing
 from enum import IntEnum
 from qisit.core.util import nullify
 
-from babel.numbers import format_decimal
+from babel.numbers import format_decimal, parse_decimal, NumberFormatError
 
 from qisit.core.db import data
 from qisit.qt.dataeditor import data_editor_model, conversion_table_model
@@ -144,7 +144,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.nameLineEdit.textEdited.connect(self.stackedwidget_edited)
         self.descriptionTextEdit.textChanged.connect(self.stackedwidget_edited)
         self.factorLineEdit.textEdited.connect(self.stackedwidget_edited)
-        self.typeComboBox.currentIndexChanged.connect(self.stackedwidget_edited)
+        self.typeComboBox.currentIndexChanged.connect(self.typeComboBox_currentIndexChanged)
 
         self.okButton.clicked.connect(self.okButton_clicked)
         self.cancelButton.clicked.connect(self.cancelButton_clicked)
@@ -258,7 +258,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
             # Those widget would emit a signal when being loaded with data (setPlainText)
 
-            blocked_widgets = (self.descriptionTextEdit, self.unitDescriptionTextEdit)
+            blocked_widgets = (self.descriptionTextEdit, self.unitDescriptionTextEdit, self.typeComboBox)
             for widget in blocked_widgets:
                 widget.blockSignals(True)
 
@@ -352,7 +352,36 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             new_description = nullify(self.descriptionTextEdit.toPlainText())
             item.description = new_description
 
-        # TODO: Ingredient, Ingredient_unit
+        elif model.root_row == model.RootItems.INGREDIENTUNITS:
+            new_type = self.typeComboBox.currentIndex()
+            if new_type >= 0:
+                # new_type == -1 should never happen - it would mean no type has been selected which should be
+                # impossible. However, better play it safe :-)
+                item.type_ = new_type
+                new_factor = nullify(self.factorLineEdit.text())
+                # Depending on the typem the factor (whatever the user entered) should either be None or have a value
+
+                if new_type != data.IngredientUnit.UnitType.UNSPECIFIC:
+                    # Unit Type GROUP isn't visible for the user
+                    if new_factor is None:
+                        new_factor = 1.0
+                    else:
+                        try:
+                            new_factor = parse_decimal(new_factor)
+                        except NumberFormatError:
+                            # The user entered garbage. TODO: Tell mit that :-)
+                            new_factor = item.factor
+                else:
+                    # Unspecific -> no Factor
+                    new_factor = None
+
+                if new_factor is not None:
+                    self.factorLineEdit.setText(str(new_factor))
+                else:
+                    self.factorLineEdit.clear()
+                item.factor = new_factor
+
+        # TODO: Ingredient
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)
 
@@ -406,7 +435,12 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.cancelButton.setEnabled(True)
 
 
-
+    def typeComboBox_currentIndexChanged(self, index: int):
+        self.stackedwidget_edited()
+        if index == data.IngredientUnit.UnitType.UNSPECIFIC:
+            self.baseUnitLabel.clear()
+        else:
+            self.baseUnitLabel.setText(data.IngredientUnit.base_units[index].unit_string())
 
     def unitbutton_clicked(self, button_id: int):
         self._unit_conversion_model.load_model(button_id)
