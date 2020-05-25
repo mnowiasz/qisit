@@ -57,7 +57,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     class StackedItems(IntEnum):
         NAME_ONLY = 0
         ITEM_WITH_DESCRIPTION = 1
-        INGREDIENT = 2
+        INGREDIENTS = 2
         INGREDIENT_UNIT = 3
 
 
@@ -79,6 +79,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.dataColumnView.setModel(self._item_model)
 
         self._selected_index = None
+        self._ingredient_icon = None
 
         self._unit_conversion_model = conversion_table_model.ConversionTableModel(self._session)
         self._unit_conversion_model.changed.connect(self.set_modified)
@@ -278,34 +279,36 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             self.nameLineEdit.setReadOnly(False)
             self.nameLineEdit.setText(item.name)
 
-            # Only the names (=title) of these entries are editable
-            if model.root_row in (model.RootItems.CATEGORIES, model.RootItems.INGREDIENTGROUPS) \
-                    or column == model.Columns.REFERENCED:
-                self.stackedWidget.setCurrentIndex(self.StackedItems.NAME_ONLY)
-            elif model.root_row in (model.RootItems.AUTHOR, model.RootItems.CUISINE, model.RootItems.YIELD_UNITS):
-                self.stackedWidget.setCurrentIndex(self.StackedItems.ITEM_WITH_DESCRIPTION)
-                if item.description is not None:
-                    self.descriptionTextEdit.setPlainText(item.description)
-                else:
-                    self.descriptionTextEdit.clear()
-            elif model.root_row == model.RootItems.INGREDIENTS:
-                self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENT)
+            if model.root_row == model.RootItems.INGREDIENTS and column != model.Columns.REFERENCED:
+                self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENTS)
                 if item.icon:
                     # ToDo: Display/Load icon
                     pass
-            elif model.root_row == model.RootItems.INGREDIENTUNITS:
-                self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENT_UNIT)
-                self.typeComboBox.setCurrentIndex(item.type_)
-                if item.factor is not None:
-                    self.factorLineEdit.setText(format_decimal(item.factor))
-                    self.baseUnitLabel.setText(data.IngredientUnit.base_units[item.type_].unit_string())
-                else:
-                    self.factorLineEdit.clear()
-                    self.baseUnitLabel.clear()
-                if item.description is not None:
-                    self.unitDescriptionTextEdit.setPlainText(item.description)
-                else:
-                    self.unitDescriptionTextEdit.clear()
+            else:
+                self._ingredient_icon = None
+                # Only the names (=title) of these entries are editable
+                if model.root_row in (model.RootItems.CATEGORIES, model.RootItems.INGREDIENTGROUPS) \
+                        or column == model.Columns.REFERENCED:
+                    self.stackedWidget.setCurrentIndex(self.StackedItems.NAME_ONLY)
+                elif model.root_row in (model.RootItems.AUTHOR, model.RootItems.CUISINE, model.RootItems.YIELD_UNITS):
+                    self.stackedWidget.setCurrentIndex(self.StackedItems.ITEM_WITH_DESCRIPTION)
+                    if item.description is not None:
+                        self.descriptionTextEdit.setPlainText(item.description)
+                    else:
+                        self.descriptionTextEdit.clear()
+                elif model.root_row == model.RootItems.INGREDIENTUNITS:
+                    self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENT_UNIT)
+                    self.typeComboBox.setCurrentIndex(item.type_)
+                    if item.factor is not None:
+                        self.factorLineEdit.setText(format_decimal(item.factor))
+                        self.baseUnitLabel.setText(data.IngredientUnit.base_units[item.type_].unit_string())
+                    else:
+                        self.factorLineEdit.clear()
+                        self.baseUnitLabel.clear()
+                    if item.description is not None:
+                        self.unitDescriptionTextEdit.setPlainText(item.description)
+                    else:
+                        self.unitDescriptionTextEdit.clear()
 
             # Everything set, unblock the signals
             for widget in blocked_widgets:
@@ -325,6 +328,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         Returns:
 
         """
+
         if self._selected_index is None:
             # Huh?
             return
@@ -332,6 +336,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         # ToDo: Merge with load_stackedwidget
         column = self._selected_index.internalId()
         model = self._item_model
+        stackedwidget_index = self.stackedWidget.currentIndex()
+
         item = None
         if column == model.Columns.REFERENCED:
             # Ingredient list items
@@ -348,11 +354,11 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             model.setData(self._selected_index, new_name, QtCore.Qt.EditRole)
 
         # Items with descriptions - Author, Cuisine, Yield Units
-        if model.root_row in (model.RootItems.AUTHOR, model.RootItems.CUISINE, model.RootItems.YIELD_UNITS):
+        if stackedwidget_index == self.StackedItems.ITEM_WITH_DESCRIPTION:
             new_description = nullify(self.descriptionTextEdit.toPlainText())
             item.description = new_description
 
-        elif model.root_row == model.RootItems.INGREDIENTUNITS:
+        elif stackedwidget_index == self.StackedItems.INGREDIENT_UNIT:
             new_type = self.typeComboBox.currentIndex()
             if new_type >= 0:
                 # new_type == -1 should never happen - it would mean no type has been selected which should be
@@ -381,7 +387,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                     self.factorLineEdit.clear()
                 item.factor = new_factor
 
-        # TODO: Ingredient
+        elif stackedwidget_index == self.StackedItems.INGREDIENTS:
+            pass
+
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)
 
