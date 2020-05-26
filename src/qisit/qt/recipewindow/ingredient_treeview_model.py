@@ -586,6 +586,13 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
                     ingredientparent_item = self.itemFromIndex(ingredientparent_index)
                     ingredientparent_item.appendRow(new_row)
 
+                # Optional icon
+                ingredient = ingredientlist_entry.ingredient
+                if ingredient.icon is not None:
+                    pixmap = QtGui.QPixmap()
+                    if pixmap.loadFromData(ingredient.icon):
+                        new_row[self.IngredientColumns.INGREDIENT].setData(pixmap, QtCore.Qt.DecorationRole)
+
             ingredientlist_index += 1
 
     def mimeData(self, indexes: typing.Iterable[QtCore.QModelIndex]) -> QtCore.QMimeData:
@@ -660,8 +667,8 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
             ingredientlist_item = self._recipe.ingredientlist[ingredientlist_index]
             position_item = self.findItems(str(ingredientlist_item.position), QtCore.Qt.MatchRecursive,
                                            IngredientTreeViewModel.IngredientColumns.POSITION)[0]
-            ingredientlist_rowitem_index = position_item.index().sibling(position_item.row(),
-                                                                         IngredientTreeViewModel.IngredientColumns.INGREDIENTLISTROW)
+            ingredientlist_rowitem_index = position_item.index() \
+                .sibling(position_item.row(), IngredientTreeViewModel.IngredientColumns.INGREDIENTLISTROW)
             self.setData(ingredientlist_rowitem_index, ingredientlist_index, role=QtCore.Qt.DisplayRole)
 
     def setData(self, index: QtCore.QModelIndex, value: typing.Any, role: int = ...) -> bool:
