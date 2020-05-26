@@ -15,15 +15,16 @@
 #  You should have received a copy of the GNU General Public License
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
-from PyQt5 import Qt, QtCore, QtGui, QtWidgets
-from sqlalchemy import orm
 import typing
 from enum import IntEnum
-from qisit.core.util import nullify
 
+from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 from babel.numbers import format_decimal, parse_decimal, NumberFormatError
+from sqlalchemy import orm
 
+from qisit import translate
 from qisit.core.db import data
+from qisit.core.util import nullify
 from qisit.qt.dataeditor import data_editor_model, conversion_table_model
 from qisit.qt.dataeditor.ui import data_editor
 
@@ -59,7 +60,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         ITEM_WITH_DESCRIPTION = 1
         INGREDIENTS = 2
         INGREDIENT_UNIT = 3
-
 
     dataCommited = QtCore.pyqtSignal(set)
     """ Emitted (including a list/set of affected Recipe IDs) when the data has been committed """
@@ -147,6 +147,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.factorLineEdit.textEdited.connect(self.stackedwidget_edited)
         self.typeComboBox.currentIndexChanged.connect(self.typeComboBox_currentIndexChanged)
 
+        self.loadIconButton.clicked.connect(self.loadIconButton_clicked)
+        self.deleteIconButton.clicked.connect(self.deleteIconButton_clicked)
+
         self.okButton.clicked.connect(self.okButton_clicked)
         self.cancelButton.clicked.connect(self.cancelButton_clicked)
 
@@ -156,7 +159,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         if selected_id == None:
             selected_id = data.IngredientUnit.UnitType.MASS
         self._unit_conversion_model.load_model(selected_id)
-
 
     @property
     def modified(self) -> bool:
@@ -217,7 +219,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             # Like the column says - always recipes
             recipe = self._item_model.get_item(row, column)
         elif column == self._item_model.Columns.REFERENCED:
-            if self._item_model.root_row not in (self._item_model.RootItems.INGREDIENTS, self._item_model.RootItems.INGREDIENTUNITS):
+            if self._item_model.root_row not in (
+            self._item_model.RootItems.INGREDIENTS, self._item_model.RootItems.INGREDIENTUNITS):
                 recipe = self._item_model.get_item(row, column)
         if recipe is not None:
             self.recipeDoubleClicked.emit(recipe)
@@ -240,6 +243,54 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             delete_action_enabled |= self._item_model.is_deletable(index)
         self.actionDelete.setEnabled(delete_action_enabled)
         self.load_stackedwidget(selected.indexes())
+
+    def deleteIconButton_clicked(self):
+        self._ingredient_icon = None
+        self.iconLabel.clear()
+        self.deleteIconButton.setEnabled(False)
+        self.stackedwidget_edited()
+
+    def loadIconButton_clicked(self):
+
+        _translate = translate
+        image_filter = _translate("DataEditor", "Imagefiles ({})").format(" ".join(
+            ["*.{}".format(supported_format.data().decode()) for supported_format in
+             Qt.QImageReader.supportedImageFormats()]))
+        options = Qt.QFileDialog.Options()
+
+        filename, filter_ = Qt.QFileDialog.getOpenFileName(self, _translate("RecipeWindow", "Select new Image"),
+                                                           filter=image_filter, options=options)
+        if not filename:
+            return
+
+        image_reader = Qt.QImageReader(filename)
+        image = image_reader.read()
+        if image.isNull():
+            Qt.QMessageBox.critical(self, _translate("DataEditor", "Error loading file"),
+                                    _translate("DataEditor", "Unable to read {}: {}")
+                                    .format(filename, image_reader.errorString()))
+            return
+
+        settings = QtCore.QSettings()
+        icon_height = settings.value("preferences/icons/height", 16)
+
+        # 1. Scale the images (if necessary)
+        if image.height() > icon_height:
+            icon = image.scaled(icon_height, icon_height, QtCore.Qt.KeepAspectRatio)
+        else:
+            icon = image
+
+        # 2. Export the images to PNG byte format
+        image_buffer = QtCore.QBuffer()
+        image_buffer.open(QtCore.QIODevice.ReadWrite)
+        icon.save(image_buffer, "PNG")
+        self.iconLabel.setPixmap(Qt.QPixmap(icon))
+        icon = image_buffer.data()
+        image_buffer.close()
+        self._ingredient_icon = icon
+
+        self.deleteIconButton.setEnabled(True)
+        self.stackedwidget_edited()
 
     def load_stackedwidget(self, selected_indexes: typing.List[QtCore.QModelIndex]):
         """
@@ -282,8 +333,14 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             if model.root_row == model.RootItems.INGREDIENTS and column != model.Columns.REFERENCED:
                 self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENTS)
                 if item.icon:
-                    # ToDo: Display/Load icon
-                    pass
+                    pixmap = Qt.QPixmap()
+                    if pixmap.loadFromData(item.icon):
+                        self.iconLabel.setPixmap(pixmap)
+                        self.deleteIconButton.setEnabled(True)
+                else:
+                    self.iconLabel.clear()
+                    self.deleteIconButton.setEnabled(False)
+
             else:
                 self._ingredient_icon = None
                 # Only the names (=title) of these entries are editable
@@ -319,7 +376,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             self.nameLineEdit.setReadOnly(True)
             self.nameLineEdit.clear()
             self._selected_index = None
-
 
     def okButton_clicked(self):
         """
@@ -388,11 +444,10 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                 item.factor = new_factor
 
         elif stackedwidget_index == self.StackedItems.INGREDIENTS:
-            pass
+            item.icon = self._ingredient_icon
 
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)
-
 
     def revert_data(self):
         """
@@ -441,7 +496,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         self.okButton.setEnabled(True)
         self.cancelButton.setEnabled(True)
-
 
     def typeComboBox_currentIndexChanged(self, index: int):
         self.stackedwidget_edited()

@@ -112,7 +112,7 @@
                   <item>
                    <widget class="QPushButton" name="loadIconButton">
                     <property name="enabled">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -144,9 +144,6 @@
                     </property>
                     <property name="text">
                      <string notr="true"/>
-                    </property>
-                    <property name="pixmap">
-                     <pixmap resource="../../resources/resources.qrc">:/icons/image-32.png</pixmap>
                     </property>
                    </widget>
                   </item>
