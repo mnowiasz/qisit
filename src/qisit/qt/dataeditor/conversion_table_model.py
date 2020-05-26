@@ -27,26 +27,38 @@ from qisit.core.util import nullify
 
 
 class ConversionTableModel(QtCore.QAbstractTableModel):
+
     changed = QtCore.pyqtSignal()
-    """ Data have been changed """
+    """ Emitted when data have been changed """
 
     def __init__(self, session: orm.Session):
         super().__init__()
         self._session = session
-        self._unit_list = []
 
         self.bold_font = QtGui.QFont()
         self.bold_font.setBold(True)
+
+        # The list of units displayed
+        self._unit_list = []
 
         # Default type when nothing has been set
         self._unit_type = data.IngredientUnit.UnitType.MASS
 
     def load_model(self, unit_type: data.IngredientUnit.UnitType):
+        """
+        (Re)loads the model at start or whenever the user selects a new type
+
+        Args:
+            unit_type ():  The type of unit
+
+        Returns:
+
+        """
         self.beginResetModel()
-        self._unit_list = []
+        self._unit_type = unit_type
+        # Sort order is by factor - the smallest one are the first, the largest one the last
         self._unit_list = self._session.query(data.IngredientUnit).filter(
             data.IngredientUnit.type_ == unit_type).order_by(data.IngredientUnit.factor).all()
-        self._unit_type = unit_type
         self.endResetModel()
 
     def reload_model(self):
@@ -56,23 +68,23 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         return len(self._unit_list)
 
     def data(self, index: QtCore.QModelIndex, role: int = ...) -> typing.Any:
+
         index_row = index.row()
         index_column = index.column()
 
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
-
             unit_horizontal = self._unit_list[index_column]
             unit_vertical = self._unit_list[index_row]
-
             value = None
 
+            # The same unit
             if index_row == index_column:
                 value = 1
 
-            # Compensate for a bug initialzing the database with wrong defaults
+            # Compensate for a bug initializing the database with wrong defaults
             elif unit_vertical.factor is not None and unit_horizontal.factor is not None:
                 value = unit_vertical.factor / unit_horizontal.factor
-            if value:
+            if value is not None:
                 if unit_horizontal.cldr and role == QtCore.Qt.DisplayRole:
                     return QtCore.QVariant(format_unit(value, unit_horizontal.name, length="short"))
                 return QtCore.QVariant(format_decimal(value))
@@ -88,7 +100,7 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         index_column = index.column()
 
         if index_row == index_column:
-            # Shouldn't happen
+            # Shouldn't happen.
             return False
 
         unit_horizontal = self._unit_list[index_column]
@@ -124,7 +136,6 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         return True
 
     def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...) -> typing.Any:
-
         # Both horizontal and vertical header display the same unit
         unit = self._unit_list[section]
         if role == QtCore.Qt.DisplayRole:
@@ -137,6 +148,8 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         flags = QtCore.Qt.ItemIsEnabled
+
+        # row == column is also immutable
         if index.row() != index.column():
             # A vertical row containing a base unit is immutable
             unit_vertical = self._unit_list[index.row()]

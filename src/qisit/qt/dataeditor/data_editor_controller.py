@@ -31,11 +31,12 @@ from qisit.qt.dataeditor.ui import data_editor
 
 class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     # ToDo: Deduplicate code (taken from recipe_window_controller
+
     class _Decorators(object):
         @classmethod
         def change(cls, method):
             """
-            A wrapper for methods that change the recipe data in some way. The wrapper makes sure that - if necessary -
+            A wrapper for methods that change the data in some way. The wrapper makes sure that - if necessary -
             a new nested transaction will be started and that the "changed" flag will be set
 
             Args:
@@ -54,7 +55,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
             return wrapped
 
-    # The Indices for the stacked item widget
+    # The indexes for the stacked item widget
     class StackedItems(IntEnum):
         NAME_ONLY = 0
         ITEM_WITH_DESCRIPTION = 1
@@ -65,12 +66,14 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     """ Emitted (including a list/set of affected Recipe IDs) when the data has been committed """
 
     recipeDoubleClicked = QtCore.pyqtSignal(data.Recipe)
-    """ Emitted when the user double clicked on a recipe"""
+    """ Emitted when the user double clicked on a recipe so the RecipeListController may open/show the recipe """
 
     def __init__(self, session: orm.Session):
         super().__init__()
         super(QtWidgets.QMainWindow, self).__init__()
         self._session = session
+        self._settings = QtCore.QSettings()
+
         self._transaction_started = False
 
         self.setupUi(self)
@@ -78,12 +81,15 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._item_model.changed.connect(self.set_modified)
         self.dataColumnView.setModel(self._item_model)
 
-        self._selected_index = None
-        self._ingredient_icon = None
-
         self._unit_conversion_model = conversion_table_model.ConversionTableModel(self._session)
         self._unit_conversion_model.changed.connect(self.set_modified)
         self.unitConversionTableView.setModel(self._unit_conversion_model)
+
+        self._selected_index = None
+
+        # Temporarily stores the icon (if any) the user has loaded
+        self._ingredient_icon = None
+
         self.init_ui()
 
     def _load_ui_states(self):
@@ -94,7 +100,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         """
 
-        settings = QtCore.QSettings()
+        settings = self._settings
         settings.beginGroup("DataEditor/window")
         if settings.contains("geometry"):
             self.restoreGeometry(settings.value("geometry"))
@@ -116,7 +122,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         Returns:
 
         """
-        settings = QtCore.QSettings()
+        settings = self._settings
 
         settings.beginGroup("DataEditor/window")
         settings.setValue("geometry", self.saveGeometry())
@@ -131,12 +137,16 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     def init_ui(self):
         self.setWindowTitle(f"{self.windowTitle()} [*]")
         self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
+
         self.actionDelete.triggered.connect(self.actionDelete_triggered)
         self.actionSave.triggered.connect(self.actionSave_triggered)
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
+
         self.dataColumnView.addAction(self.actionDelete)
         self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
         self.dataColumnView.selectionModel().selectionChanged.connect(self.dataColumnView_selectionChanged)
+
+        # Setup the button group so the id reflect the unit types
         self.unitButtonGroup.setId(self.massRadioButton, data.IngredientUnit.UnitType.MASS)
         self.unitButtonGroup.setId(self.volumeRadioButton, data.IngredientUnit.UnitType.VOLUME)
         self.unitButtonGroup.setId(self.quantityRadioButton, data.IngredientUnit.UnitType.QUANTITY)
@@ -156,7 +166,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._load_ui_states()
 
         selected_id = self.unitButtonGroup.checkedId()
-        if selected_id == None:
+        if selected_id is None:
+            # Shouldn't happen
             selected_id = data.IngredientUnit.UnitType.MASS
         self._unit_conversion_model.load_model(selected_id)
 
@@ -171,7 +182,18 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.actionRevert.setEnabled(modified)
 
     def actionDelete_triggered(self, checked: bool = False):
+        """
+        Deletes the item in question
+
+        Args:
+            checked (): ignored
+
+        Returns:
+
+        """
+
         for index in self.dataColumnView.selectedIndexes():
+            # Better play it safe
             if self._item_model.is_deletable(index):
                 self._item_model.delete_item(index)
 
@@ -205,29 +227,34 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
     def dataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
         """
         User double clicked on an item
+
         Args:
             index ():  The item
 
         Returns:
 
         """
+
+        # Depeding on the item either ignore the event (in that case an editor has been opened) or signal the
+        # RecipeListController that a RecipeWindow should be opened/shown
         column = index.internalId()
         row = index.row()
+        model = self._item_model
         recipe = None
         # Find out the index that contain a recipe
         if column == self._item_model.Columns.RECIPES:
             # Like the column says - always recipes
-            recipe = self._item_model.get_item(row, column)
+            recipe = model.get_item(row, column)
         elif column == self._item_model.Columns.REFERENCED:
-            if self._item_model.root_row not in (
-            self._item_model.RootItems.INGREDIENTS, self._item_model.RootItems.INGREDIENTUNITS):
-                recipe = self._item_model.get_item(row, column)
+            # Ingredient and IngredientUnits have IngredientListUntis in this column, not recipes
+            if model.root_row not in (model.RootItems.INGREDIENTS, model.RootItems.INGREDIENTUNITS):
+                recipe = model.get_item(row, column)
         if recipe is not None:
             self.recipeDoubleClicked.emit(recipe)
 
     def dataColumnView_selectionChanged(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
         """
-        The selection has been changed. Used to enable/disable the delete action
+        The selection has been changed. Used to enable/disable the delete action and to load the stacked widget
 
         Args:
             selected (): Selected indexes
@@ -236,7 +263,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         Returns:
 
         """
-
         delete_action_enabled = False
 
         for index in selected.indexes():
@@ -251,14 +277,21 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.stackedwidget_edited()
 
     def loadIconButton_clicked(self):
+        """
+        The load icon button has been clicked
+        Returns:
+
+        """
 
         _translate = translate
+
+        # TODO: Merge with RecipeWindow/deduplicate
         image_filter = _translate("DataEditor", "Imagefiles ({})").format(" ".join(
             ["*.{}".format(supported_format.data().decode()) for supported_format in
              Qt.QImageReader.supportedImageFormats()]))
         options = Qt.QFileDialog.Options()
 
-        filename, filter_ = Qt.QFileDialog.getOpenFileName(self, _translate("RecipeWindow", "Select new Image"),
+        filename, filter_ = Qt.QFileDialog.getOpenFileName(self, _translate("DataEditor", "Select an Icon"),
                                                            filter=image_filter, options=options)
         if not filename:
             return
@@ -271,23 +304,23 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                                     .format(filename, image_reader.errorString()))
             return
 
-        settings = QtCore.QSettings()
+        settings = self._settings
         icon_height = settings.value("preferences/icons/height", 16)
 
         # 1. Scale the images (if necessary)
         if image.height() > icon_height:
-            icon = image.scaled(icon_height, icon_height, QtCore.Qt.KeepAspectRatio)
+            icon_image = image.scaled(icon_height, icon_height, QtCore.Qt.KeepAspectRatio)
         else:
-            icon = image
+            icon_image = image
 
         # 2. Export the images to PNG byte format
         image_buffer = QtCore.QBuffer()
         image_buffer.open(QtCore.QIODevice.ReadWrite)
-        icon.save(image_buffer, "PNG")
-        self.iconLabel.setPixmap(Qt.QPixmap(icon))
-        icon = image_buffer.data()
+        icon_image.save(image_buffer, "PNG")
+
+        self.iconLabel.setPixmap(Qt.QPixmap(icon_image))
+        self._ingredient_icon = image_buffer.data()
         image_buffer.close()
-        self._ingredient_icon = icon
 
         self.deleteIconButton.setEnabled(True)
         self.stackedwidget_edited()
@@ -308,8 +341,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         if len(selected_indexes) == 1 and selected_indexes[0].flags() & QtCore.Qt.ItemIsEditable:
 
-            # Those widget would emit a signal when being loaded with data (setPlainText)
-
+            # Those widget would emit a signal when being loaded with data
             blocked_widgets = (self.descriptionTextEdit, self.unitDescriptionTextEdit, self.typeComboBox)
             for widget in blocked_widgets:
                 widget.blockSignals(True)
@@ -319,51 +351,52 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             model = self._item_model
             column = selected_index.internalId()
 
-            item = None
+            the_item = None
             if column == model.Columns.REFERENCED:
                 # Ingredient list items
-                item = model.get_item(selected_index.row(), column)
+                the_item = model.get_item(selected_index.row(), column)
             else:
-                item = model.get_item(selected_index.row(), column)[0]
+                the_item = model.get_item(selected_index.row(), column)[0]
 
             # Common to all items
             self.nameLineEdit.setReadOnly(False)
-            self.nameLineEdit.setText(item.name)
+            self.nameLineEdit.setText(the_item.name)
 
             if model.root_row == model.RootItems.INGREDIENTS and column != model.Columns.REFERENCED:
                 self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENTS)
-                if item.icon:
-                    pixmap = Qt.QPixmap()
-                    if pixmap.loadFromData(item.icon):
-                        self.iconLabel.setPixmap(pixmap)
+                if the_item.icon:
+                    icon_pixmap = Qt.QPixmap()
+                    if icon_pixmap.loadFromData(the_item.icon):
+                        self.iconLabel.setPixmap(icon_pixmap)
                         self.deleteIconButton.setEnabled(True)
                 else:
                     self.iconLabel.clear()
                     self.deleteIconButton.setEnabled(False)
-
             else:
                 self._ingredient_icon = None
+
                 # Only the names (=title) of these entries are editable
                 if model.root_row in (model.RootItems.CATEGORIES, model.RootItems.INGREDIENTGROUPS) \
                         or column == model.Columns.REFERENCED:
                     self.stackedWidget.setCurrentIndex(self.StackedItems.NAME_ONLY)
                 elif model.root_row in (model.RootItems.AUTHOR, model.RootItems.CUISINE, model.RootItems.YIELD_UNITS):
+                    # These three are very similar and share a description
                     self.stackedWidget.setCurrentIndex(self.StackedItems.ITEM_WITH_DESCRIPTION)
-                    if item.description is not None:
-                        self.descriptionTextEdit.setPlainText(item.description)
+                    if the_item.description is not None:
+                        self.descriptionTextEdit.setPlainText(the_item.description)
                     else:
                         self.descriptionTextEdit.clear()
                 elif model.root_row == model.RootItems.INGREDIENTUNITS:
                     self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENT_UNIT)
-                    self.typeComboBox.setCurrentIndex(item.type_)
-                    if item.factor is not None:
-                        self.factorLineEdit.setText(format_decimal(item.factor))
-                        self.baseUnitLabel.setText(data.IngredientUnit.base_units[item.type_].unit_string())
+                    self.typeComboBox.setCurrentIndex(the_item.type_)
+                    if the_item.factor is not None:
+                        self.factorLineEdit.setText(format_decimal(the_item.factor))
+                        self.baseUnitLabel.setText(data.IngredientUnit.base_units[the_item.type_].unit_string())
                     else:
                         self.factorLineEdit.clear()
                         self.baseUnitLabel.clear()
-                    if item.description is not None:
-                        self.unitDescriptionTextEdit.setPlainText(item.description)
+                    if the_item.description is not None:
+                        self.unitDescriptionTextEdit.setPlainText(the_item.description)
                     else:
                         self.unitDescriptionTextEdit.clear()
 
@@ -372,6 +405,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                 widget.blockSignals(False)
 
         else:
+            # Multiple selections
             self.stackedWidget.setCurrentIndex(self.StackedItems.NAME_ONLY)
             self.nameLineEdit.setReadOnly(True)
             self.nameLineEdit.clear()
@@ -394,45 +428,48 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         model = self._item_model
         stackedwidget_index = self.stackedWidget.currentIndex()
 
-        item = None
+        the_item = None
         if column == model.Columns.REFERENCED:
             # Ingredient list items
-            item = model.get_item(self._selected_index.row(), column)
+            the_item = model.get_item(self._selected_index.row(), column)
         else:
-            item = model.get_item(self._selected_index.row(), column)[0]
+            the_item = model.get_item(self._selected_index.row(), column)[0]
 
         new_name = nullify(self.nameLineEdit.text())
         self.set_modified()
         if new_name is None:
-            self.nameLineEdit.setText(item.name)
+            self.nameLineEdit.setText(the_item.name)
         else:
             # This will take care of saving the value
             model.setData(self._selected_index, new_name, QtCore.Qt.EditRole)
 
+            # Trimmed name
+            self.nameLineEdit.setText(new_name)
+
         # Items with descriptions - Author, Cuisine, Yield Units
         if stackedwidget_index == self.StackedItems.ITEM_WITH_DESCRIPTION:
             new_description = nullify(self.descriptionTextEdit.toPlainText())
-            item.description = new_description
+            the_item.description = new_description
 
         elif stackedwidget_index == self.StackedItems.INGREDIENT_UNIT:
             new_type = self.typeComboBox.currentIndex()
             if new_type >= 0:
                 # new_type == -1 should never happen - it would mean no type has been selected which should be
                 # impossible. However, better play it safe :-)
-                item.type_ = new_type
+                the_item.type_ = new_type
                 new_factor = nullify(self.factorLineEdit.text())
-                # Depending on the typem the factor (whatever the user entered) should either be None or have a value
 
+                # Depending on the type of  the factor (whatever the user entered) should either be None or have a
+                # value. Unit Type GROUP isn't visible for the user so don't bother to check
                 if new_type != data.IngredientUnit.UnitType.UNSPECIFIC:
-                    # Unit Type GROUP isn't visible for the user
                     if new_factor is None:
                         new_factor = 1.0
                     else:
                         try:
                             new_factor = parse_decimal(new_factor)
                         except NumberFormatError:
-                            # The user entered garbage. TODO: Tell mit that :-)
-                            new_factor = item.factor
+                            # The user entered garbage. TODO: Tell him that :-)
+                            new_factor = the_item.factor
                 else:
                     # Unspecific -> no Factor
                     new_factor = None
@@ -441,11 +478,11 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                     self.factorLineEdit.setText(str(new_factor))
                 else:
                     self.factorLineEdit.clear()
-                item.factor = new_factor
+                the_item.factor = new_factor
 
         elif stackedwidget_index == self.StackedItems.INGREDIENTS:
-            item.icon = self._ingredient_icon
-            self._item_model.affected_recipe_ids = self._item_model.affected_recipe_ids.union([recipe.id for recipe in item.recipes])
+            the_item.icon = self._ingredient_icon
+            model.affected_recipe_ids = model.affected_recipe_ids.union([recipe.id for recipe in the_item.recipes])
 
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)

@@ -24,6 +24,7 @@ from sqlalchemy.dialects import mysql
 
 from qisit.core import db
 
+
 # "AmountUnit" probably would have been a better name, but there's no sense in renaming the class/table, issueing
 # database updates and so on.
 class IngredientUnit(db.Base):
@@ -98,6 +99,7 @@ class IngredientUnit(db.Base):
                                primaryjoin="IngredientUnit.id == IngredientListEntry.unit_id",
                                secondaryjoin="Recipe.id == IngredientListEntry.recipe_id", viewonly=True,
                                order_by="Recipe.title")
+
     @classmethod
     def get_or_add_ingredient_unit_name(cls, session_: sql.orm.session, name: str,
                                         type_: UnitType = UnitType.QUANTITY):
@@ -162,10 +164,10 @@ class IngredientUnit(db.Base):
         # Setup the base units
 
         cls.base_units[cls.UnitType.MASS] = gram_unit
-        cls.base_units[cls.UnitType.VOLUME] =  session.query(IngredientUnit).filter(IngredientUnit.name == "volume-milliliter").first()
+        cls.base_units[cls.UnitType.VOLUME] = session.query(IngredientUnit).filter(
+            IngredientUnit.name == "volume-milliliter").first()
         cls.base_units[cls.UnitType.QUANTITY] = session.query(IngredientUnit).filter(IngredientUnit.name == "").first()
         cls.base_units[cls.UnitType.GROUP] = cls.unit_group
-
 
     def __init__(self, name: str, type_: UnitType = UnitType.QUANTITY, cldr: bool = False, factor=None,
                  description: str = None):
