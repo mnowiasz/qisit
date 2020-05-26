@@ -173,24 +173,29 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             return QtCore.QVariant()
 
         if column == self.Columns.ITEMS:
-            item = self._item_lists[self.Columns.ITEMS][row]
-            count = item[1]
+            item = self._item_lists[self.Columns.ITEMS][row][0]
+            count = self._item_lists[self.Columns.ITEMS][row][1]
             if role == QtCore.Qt.UserRole:
                 return QtCore.QVariant(count)
 
             if role == QtCore.Qt.DisplayRole:
-                title = f"{item[0].name} ({count})"
+                title = f"{item.name} ({count})"
                 if self.root_row == self.RootItems.INGREDIENTUNITS:
                     # Display the unit in the user's locale
-                    if item[0].cldr:
-                        title = f"{item[0].unit_string()} ({count})"
+                    if item.cldr:
+                        title = f"{item.unit_string()} ({count})"
                 return QtCore.QVariant(title)
+            if role == QtCore.Qt.DecorationRole and self.root_row == self.RootItems.INGREDIENTS:
+                if item.icon is not None:
+                    pixmap = QtGui.QPixmap()
+                    if pixmap.loadFromData(item.icon):
+                        return QtCore.QVariant(pixmap)
 
             if role == QtCore.Qt.EditRole:
-                return QtCore.QVariant(item[0].name)
+                return QtCore.QVariant(item.name)
 
             if self.root_row == self.RootItems.INGREDIENTUNITS:
-                ingredient_unit = item[0]
+                ingredient_unit = item
                 is_base_unit = ingredient_unit in data.IngredientUnit.base_units.values()
 
                 if role == QtCore.Qt.FontRole:

@@ -445,6 +445,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         elif stackedwidget_index == self.StackedItems.INGREDIENTS:
             item.icon = self._ingredient_icon
+            self._item_model.affected_recipe_ids = self._item_model.affected_recipe_ids.union([recipe.id for recipe in item.recipes])
 
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)
