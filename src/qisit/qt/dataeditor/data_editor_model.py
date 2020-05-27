@@ -44,7 +44,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         ROOT = 0
         ITEMS = 1
         REFERENCED = 2
-        RECIPES = 3  # Only for ingredients, otherwise REFERENCED is the last column
 
     class FirstColumnData(IntEnum):
         """ Symbolic names for self:_first_column """
@@ -176,8 +175,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             item = self._item_lists[self.Columns.ITEMS][row][0]
             count = self._item_lists[self.Columns.ITEMS][row][1]
             if role == QtCore.Qt.UserRole:
-                return QtCore.QVariant(count)
-
+                if self.root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
+                    return QtCore.QVariant(count)
+                else:
+                    return 0
+                
             if role == QtCore.Qt.DisplayRole:
                 title = f"{item.name} ({count})"
                 if self.root_row == self.RootItems.INGREDIENTUNITS:
@@ -210,11 +212,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         elif column == self.Columns.REFERENCED:
             item = self._item_lists[column][row]
             if role == QtCore.Qt.UserRole:
-                if self.root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
-                    # Ingredients and ingredient units  have a fourth column - the recipe
-                    return 1
-                else:
-                    return 0
+                return 0
 
             if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
                 # Different items have different leaves: Author, Cuisine, ... have the recipes' belonging to them
@@ -227,13 +225,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 else:
                     return QtCore.QVariant(item.title)
 
-        elif column == self.Columns.RECIPES:
-            if role == QtCore.Qt.DisplayRole:
-                recipe = self._item_lists[column][row]
-                return QtCore.QVariant(recipe.title)
-            if role == QtCore.Qt.UserRole:
-                # Last column
-                return 0
         return QtCore.QVariant(None)
 
     def delete_item(self, index: QtCore.QModelIndex):

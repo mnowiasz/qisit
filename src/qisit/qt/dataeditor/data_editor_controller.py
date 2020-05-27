@@ -25,7 +25,7 @@ from sqlalchemy import orm
 from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
-from qisit.qt.dataeditor import data_editor_model, conversion_table_model
+from qisit.qt.dataeditor import data_editor_model, conversion_table_model, recipe_list_model
 from qisit.qt.dataeditor.ui import data_editor
 
 
@@ -90,6 +90,12 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         # Temporarily stores the icon (if any) the user has loaded
         self._ingredient_icon = None
 
+        self.recipeListLayout = QtWidgets.QVBoxLayout()
+        self.recipeListView = QtWidgets.QListView()
+        #self.recipeListLayout.addItem(self.recipeListView)
+        #self.recipeListView.setRootIsDecorated(False)
+        self.recipeListView.setWordWrap(True)
+        self._recipe_list_model = recipe_list_model.RecipeListModel()
         self.init_ui()
 
     def _load_ui_states(self):
@@ -143,8 +149,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
 
         self.dataColumnView.addAction(self.actionDelete)
-        self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
+        #self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
         self.dataColumnView.selectionModel().selectionChanged.connect(self.dataColumnView_selectionChanged)
+        self.dataColumnView.updatePreviewWidget.connect(self.dataColumnView_updatePreviewWidget)
 
         # Setup the button group so the id reflect the unit types
         self.unitButtonGroup.setId(self.massRadioButton, data.IngredientUnit.UnitType.MASS)
@@ -162,6 +169,11 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         self.okButton.clicked.connect(self.okButton_clicked)
         self.cancelButton.clicked.connect(self.cancelButton_clicked)
+
+        self.recipeListView.setModel(self._recipe_list_model)
+        self.recipeListView.doubleClicked.connect(self.recipeListView_doubleclicked)
+
+        self.dataColumnView.setPreviewWidget(self.recipeListView)
 
         self._load_ui_states()
 
@@ -224,7 +236,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._save_ui_states()
         event.accept()
 
-    def dataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
+
+    def QdataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
         """
         User double clicked on an item
 
@@ -269,6 +282,22 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             delete_action_enabled |= self._item_model.is_deletable(index)
         self.actionDelete.setEnabled(delete_action_enabled)
         self.load_stackedwidget(selected.indexes())
+
+    def dataColumnView_updatePreviewWidget(self, index: QtCore.QModelIndex):
+        item = None
+        recipe_list = None
+        column = index.internalId()
+        model = self._item_model
+        data = model.get_item(index.row(), index.internalId())
+        if column == model.Columns.REFERENCED:
+            item = data
+            recipe_list = [item.recipe, ]
+        else:
+            item = data[0]
+            recipe_list = [recipe for recipe in item.recipes]
+
+
+        self._recipe_list_model.set_recipe_list(recipe_list)
 
     def deleteIconButton_clicked(self):
         self._ingredient_icon = None
@@ -489,6 +518,10 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
     def recipe_changed(self, recipe: data.Recipe):
         self._session.expire_all()
+
+    def recipeListView_doubleclicked(self, index: QtCore.QModelIndex):
+        recipe = self._recipe_list_model.get_item(index.row())
+        self.recipeDoubleClicked.emit(recipe)
 
     def revert_data(self):
         """
