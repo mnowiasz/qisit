@@ -39,7 +39,7 @@ def qtmain():
     QtCore.QCoreApplication.setOrganizationDomain("qisit.app")
     QtCore.QCoreApplication.setOrganizationName("qisit")
     QtCore.QCoreApplication.setApplicationName("qisit")
-    QtCore.QCoreApplication.setApplicationVersion("0.3.1")
+    QtCore.QCoreApplication.setApplicationVersion("0.3.2")
 
     # CTRL-C
     signal.signal(signal.SIGINT, signal.SIG_DFL)
