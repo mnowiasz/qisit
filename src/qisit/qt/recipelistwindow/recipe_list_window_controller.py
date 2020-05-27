@@ -727,7 +727,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         recipe_window.show()
         recipe_window.raise_()
 
-    def recipe_commited(self):
+    def recipe_commited(self, recipe: data.Recipe):
         """
         A recipe has been changed and saved
 
@@ -740,7 +740,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         self.update_filters()
         self._reload_model()
         if self._data_editor:
-            self._data_editor.revert_data()
+            self._data_editor.recipe_changed(recipe)
 
     def recipesPerPagecomboBox_activated(self, index: int):
         """

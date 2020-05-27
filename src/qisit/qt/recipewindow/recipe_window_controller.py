@@ -60,7 +60,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
             return wrapped
 
     # TODO: Propagate this to all other open recipe windows
-    recipeChanged = QtCore.pyqtSignal()
+    recipeChanged = QtCore.pyqtSignal(data.Recipe)
     """ Emitted after the recipe has been saved so the recipe list (and categories, cuisine, and so on) can reload  """
 
     def __init__(self, session: orm.Session, recipe: data.Recipe, new_recipe: bool = False):
@@ -949,7 +949,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.__new_recipe = False
         self.modified = False
         self._transaction_started = False
-        self.recipeChanged.emit()
+        self.recipeChanged.emit(self._recipe)
 
     @_Decorators.change
     def set_image(self, image: Qt.QImage):

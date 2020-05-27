@@ -487,6 +487,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)
 
+    def recipe_changed(self, recipe: data.Recipe):
+        self._session.expire_all()
+
     def revert_data(self):
         """
         Reverts the recipe to the data stored in the database
@@ -497,6 +500,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         if self._transaction_started:
             self._session.rollback()
+
         self._transaction_started = False
         self._item_model.reset()
         self.dataColumnView.reset()

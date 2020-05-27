@@ -257,7 +257,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             self._session.delete(the_item)
             self.endRemoveRows()
 
-
     def dropMimeData(self, mimedata: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
                      parent: QtCore.QModelIndex) -> bool:
 
@@ -406,7 +405,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             return False
 
         # These can be deleted in any case
-        if self.root_row in (self.RootItems.AUTHOR, self.RootItems.CATEGORIES, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
+        if self.root_row in (
+        self.RootItems.AUTHOR, self.RootItems.CATEGORIES, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
             return True
 
         # All other items may be only deleted if they are "empty" i.e. have no children
@@ -493,24 +493,32 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 self._item_lists[column] = query.group_by(the_table.id).order_by(func.lower(the_table.name)).all()
 
         elif column == self.Columns.REFERENCED:
-            item = self._item_lists[self.Columns.ITEMS][parent_row][0]
+            # Potential effects of Drag & Drop
+            if len(self._item_lists[self.Columns.ITEMS]) > 0:
+                item = self._item_lists[self.Columns.ITEMS][parent_row][0]
 
-            # Copy the lists. Otherwise - when cleared - they would be erased from the
-            # database itself: items/recipes are sqlalchemy lists, very convenient - but changes
-            # there will cause database changes, too, so clearing() such a list will cause the references
-            # to be deleted for real.
-            item_list = None
-            if self.root_row == self.RootItems.INGREDIENTS:
-                item_list = item.items
-            elif self.root_row == self.RootItems.INGREDIENTUNITS:
-                item_list = item.ingredientlist
+                # Copy the lists. Otherwise - when cleared - they would be erased from the
+                # database itself: items/recipes are sqlalchemy lists, very convenient - but changes
+                # there will cause database changes, too, so clearing() such a list will cause the references
+                # to be deleted for real.
+                item_list = None
+                if self.root_row == self.RootItems.INGREDIENTS:
+                    item_list = item.items
+                elif self.root_row == self.RootItems.INGREDIENTUNITS:
+                    item_list = item.ingredientlist
+                else:
+                    item_list = item.recipes
+                self._item_lists[column] = [item_data for item_data in item_list]
             else:
-                item_list = item.recipes
-            self._item_lists[column] = [item_data for item_data in item_list]
+                self._item_lists[self.Columns.ITEMS].clear()
 
         elif column == self.Columns.RECIPES:
-            recipe = self._item_lists[self.Columns.REFERENCED][parent_row].recipe
-            self._item_lists[column] = [recipe, ]
+            # Possible effects of Drag & Drop
+            if len(self._item_lists[self.Columns.REFERENCED]) > 0:
+                recipe = self._item_lists[self.Columns.REFERENCED][parent_row].recipe
+                self._item_lists[self.Columns.RECIPES] = [recipe, ]
+            else:
+                self._item_lists[self.Columns.RECIPES].clear()
         else:
             return 0
 
