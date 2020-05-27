@@ -92,9 +92,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         self.recipeListLayout = QtWidgets.QVBoxLayout()
         self.recipeListView = QtWidgets.QListView()
-        #self.recipeListLayout.addItem(self.recipeListView)
-        #self.recipeListView.setRootIsDecorated(False)
-        self.recipeListView.setWordWrap(True)
         self._recipe_list_model = recipe_list_model.RecipeListModel()
         self.init_ui()
 
@@ -171,6 +168,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.cancelButton.clicked.connect(self.cancelButton_clicked)
 
         self.recipeListView.setModel(self._recipe_list_model)
+        self.recipeListView.setWordWrap(True)
         self.recipeListView.doubleClicked.connect(self.recipeListView_doubleclicked)
 
         self.dataColumnView.setPreviewWidget(self.recipeListView)

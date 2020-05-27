@@ -39,7 +39,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         YIELD_UNITS = 6
 
     class Columns(IntEnum):
-        """ Symoblic column names """
+        """ Symbolic column names """
 
         ROOT = 0
         ITEMS = 1
@@ -179,7 +179,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     return QtCore.QVariant(count)
                 else:
                     return 0
-                
+
             if role == QtCore.Qt.DisplayRole:
                 title = f"{item.name} ({count})"
                 if self.root_row == self.RootItems.INGREDIENTUNITS:
@@ -187,6 +187,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     if item.cldr:
                         title = f"{item.unit_string()} ({count})"
                 return QtCore.QVariant(title)
+
             if role == QtCore.Qt.DecorationRole and self.root_row == self.RootItems.INGREDIENTS:
                 if item.icon is not None:
                     pixmap = QtGui.QPixmap()
@@ -215,15 +216,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 return 0
 
             if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
-                # Different items have different leaves: Author, Cuisine, ... have the recipes' belonging to them
-                # displayed in it's leaf ("referenced") column. Ingredients on the other hand have got
-                # Ingredientlist entries displayed there. Recipes have got a title, all other tables a name (this was
-                # probably an oversight, if a recipe would have a name instead of a title, the code underneath would be
-                # unnecessary). But too much bother to change the database now.
-                if self.root_row in (self.RootItems.INGREDIENTS, self.RootItems.INGREDIENTUNITS):
-                    return QtCore.QVariant(item.name)
-                else:
-                    return QtCore.QVariant(item.title)
+                return QtCore.QVariant(item.name)
 
         return QtCore.QVariant(None)
 
@@ -311,7 +304,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             else:
                 # Append operation. Only allowed on Cuisine or Ingredients
                 target_item = self._item_lists[target_column][target_row][0]
-                self.beginRemoveRows(self.createIndex(target_row, 0, self.Columns.ITEMS), index_row, index_row)
+                parent_index = self._parent_row[target_column]
+                self.beginRemoveRows(self.createIndex(parent_index, 0, self.Columns.ITEMS), index_row, index_row)
                 if self.root_row == self.RootItems.CUISINE:
                     recipe = self._item_lists[index_column][index_row]
                     recipe.cuisine = target_item
@@ -495,21 +489,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 item_list = None
                 if self.root_row == self.RootItems.INGREDIENTS:
                     item_list = item.items
-                elif self.root_row == self.RootItems.INGREDIENTUNITS:
-                    item_list = item.ingredientlist
                 else:
-                    item_list = item.recipes
+                    item_list = item.ingredientlist
                 self._item_lists[column] = [item_data for item_data in item_list]
-            else:
-                self._item_lists[self.Columns.ITEMS].clear()
-
-        elif column == self.Columns.RECIPES:
-            # Possible effects of Drag & Drop
-            if len(self._item_lists[self.Columns.REFERENCED]) > 0:
-                recipe = self._item_lists[self.Columns.REFERENCED][parent_row].recipe
-                self._item_lists[self.Columns.RECIPES] = [recipe, ]
-            else:
-                self._item_lists[self.Columns.RECIPES].clear()
         else:
             return 0
 
