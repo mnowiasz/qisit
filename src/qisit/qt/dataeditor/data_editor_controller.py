@@ -234,35 +234,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._save_ui_states()
         event.accept()
 
-
-    def QdataColumnView_doubleclicked(self, index: QtCore.QModelIndex):
-        """
-        User double clicked on an item
-
-        Args:
-            index ():  The item
-
-        Returns:
-
-        """
-
-        # Depeding on the item either ignore the event (in that case an editor has been opened) or signal the
-        # RecipeListController that a RecipeWindow should be opened/shown
-        column = index.internalId()
-        row = index.row()
-        model = self._item_model
-        recipe = None
-        # Find out the index that contain a recipe
-        if column == self._item_model.Columns.RECIPES:
-            # Like the column says - always recipes
-            recipe = model.get_item(row, column)
-        elif column == self._item_model.Columns.REFERENCED:
-            # Ingredient and IngredientUnits have IngredientListUntis in this column, not recipes
-            if model.root_row not in (model.RootItems.INGREDIENTS, model.RootItems.INGREDIENTUNITS):
-                recipe = model.get_item(row, column)
-        if recipe is not None:
-            self.recipeDoubleClicked.emit(recipe)
-
     def dataColumnView_selectionChanged(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
         """
         The selection has been changed. Used to enable/disable the delete action and to load the stacked widget
@@ -287,7 +258,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         column = index.internalId()
         model = self._item_model
         data = model.get_item(index.row(), index.internalId())
-        if column == model.Columns.REFERENCED:
+        if column == model.Columns.INGREDIENTLIST_ENTRIES:
             item = data
             recipe_list = [item.recipe, ]
         else:
@@ -379,7 +350,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             column = selected_index.internalId()
 
             the_item = None
-            if column == model.Columns.REFERENCED:
+            if column == model.Columns.INGREDIENTLIST_ENTRIES:
                 # Ingredient list items
                 the_item = model.get_item(selected_index.row(), column)
             else:
@@ -389,7 +360,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             self.nameLineEdit.setReadOnly(False)
             self.nameLineEdit.setText(the_item.name)
 
-            if model.root_row == model.RootItems.INGREDIENTS and column != model.Columns.REFERENCED:
+            if model.root_row == model.RootItems.INGREDIENTS and column != model.Columns.INGREDIENTLIST_ENTRIES:
                 self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENTS)
                 if the_item.icon:
                     icon_pixmap = Qt.QPixmap()
@@ -404,7 +375,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
                 # Only the names (=title) of these entries are editable
                 if model.root_row in (model.RootItems.CATEGORIES, model.RootItems.INGREDIENTGROUPS) \
-                        or column == model.Columns.REFERENCED:
+                        or column == model.Columns.INGREDIENTLIST_ENTRIES:
                     self.stackedWidget.setCurrentIndex(self.StackedItems.NAME_ONLY)
                 elif model.root_row in (model.RootItems.AUTHOR, model.RootItems.CUISINE, model.RootItems.YIELD_UNITS):
                     # These three are very similar and share a description
@@ -456,7 +427,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         stackedwidget_index = self.stackedWidget.currentIndex()
 
         the_item = None
-        if column == model.Columns.REFERENCED:
+        if column == model.Columns.INGREDIENTLIST_ENTRIES:
             # Ingredient list items
             the_item = model.get_item(self._selected_index.row(), column)
         else:

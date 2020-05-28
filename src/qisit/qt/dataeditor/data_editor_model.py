@@ -43,7 +43,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         ROOT = 0
         ITEMS = 1
-        REFERENCED = 2
+        INGREDIENTLIST_ENTRIES = 2
 
     class FirstColumnData(IntEnum):
         """ Symbolic names for self:_first_column """
@@ -210,7 +210,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 if role == QtCore.Qt.DecorationRole:
                     return QtCore.QVariant(QtGui.QIcon(self._ingredient_unit_icons[ingredient_unit.type_]))
 
-        elif column == self.Columns.REFERENCED:
+        elif column == self.Columns.INGREDIENTLIST_ENTRIES:
             item = self._item_lists[column][row]
             if role == QtCore.Qt.UserRole:
                 return 0
@@ -326,7 +326,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         is_drop_enabled = False
         is_drag_enabled = False
 
-        if column in (self.Columns.ITEMS, self.Columns.REFERENCED):
+        if column in (self.Columns.ITEMS, self.Columns.INGREDIENTLIST_ENTRIES):
 
             # Only certain combinations of drag&drop make sense: The item column can drag itself on another item
             # and recipes can be dragged to another author or cuisine. All other combination aren't very useful
@@ -477,7 +477,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
                 self._item_lists[column] = query.group_by(the_table.id).order_by(func.lower(the_table.name)).all()
 
-        elif column == self.Columns.REFERENCED:
+        elif column == self.Columns.INGREDIENTLIST_ENTRIES:
             # Potential effects of Drag & Drop
             if len(self._item_lists[self.Columns.ITEMS]) > 0:
                 item = self._item_lists[self.Columns.ITEMS][parent_row][0]
@@ -508,28 +508,37 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         root_row = self._parent_row[self.Columns.ROOT]
 
         item = None
-        if column == self.Columns.REFERENCED:
-            item = self._item_lists[self.Columns.REFERENCED][row]
+        if column == self.Columns.INGREDIENTLIST_ENTRIES:
+            item = self._item_lists[self.Columns.INGREDIENTLIST_ENTRIES][row]
             changed_recipes = [item.recipe_id, ]
         else:
             item = self._item_lists[column][row][0]
             changed_recipes = [recipe.id for recipe in item.recipes]
 
-        # Test if the value already exists
-        the_table = self._first_column[root_row][0]
-        duplicate = self._session.query(the_table).filter(the_table.name == value).first()
-        if duplicate:
-            if duplicate == item:
-                # The same item - user has double clicked and then again. Nothing to do here.
-                return False
-            else:
-                # Duplicate item. There three possible ways to deal with this:
-                # 1.) Silently discard the change
-                # 2.) Open a Error dialog telling the user about the problem
-                # 3.) Like in drag&drop, merge both items.
+        if item.name == value:
+            # User has double clicked without changing the value
+            return False
 
-                # Currently: Choice 1.)
-                return False
+        # Test if the value already exists - but only in case of items. The seconds
+        if column == self.Columns.ITEMS:
+            the_table = self._first_column[root_row][0]
+            print(the_table)
+            print(f"value = {value}")
+
+            duplicate = self._session.query(the_table).filter(the_table.name == value).first()
+            if duplicate:
+                if duplicate == item:
+                    # The same item - user has double clicked and then again. Nothing to do here.
+                    return False
+                else:
+                    # Duplicate item. There three possible ways to deal with this:
+                    # 1.) Silently discard the change
+                    # 2.) Open a Error dialog telling the user about the problem
+                    # 3.) Like in drag&drop, merge both items.
+
+                    # Currently: Choice 1.)
+                    return False
+
         self.changed.emit()
         self.affected_recipe_ids = self.affected_recipe_ids.union(changed_recipes)
         item.name = value
