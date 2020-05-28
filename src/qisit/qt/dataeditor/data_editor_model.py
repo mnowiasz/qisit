@@ -122,7 +122,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
     @property
     def root_row(self) -> int:
-        return self._parent_row[self.Columns.ROOT]
+        return self._parent_row.get(self.Columns.ROOT, None)
 
     def canDropMimeData(self, data: QtCore.QMimeData, action: QtCore.Qt.DropAction, row: int, column: int,
                         parent: QtCore.QModelIndex) -> bool:
@@ -254,19 +254,35 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # The affected recipes
         recipes_ids = set()
 
+
         # Merge vs append
         merged = False
+        cached = {}
+
+        # This is needed because of the rows that will be removed - the indexes aren't valid after that, so
+        # this is to conserve (temporarily) the status quo ante
+        for (index_row, index_column) in index_list:
+            cached[(target_column, target_row)] = self._item_lists[target_column][target_row][0]
+            if index_column == target_column:
+                cached[(target_column, index_row)] = self._item_lists[target_column][index_row][0]
+            else:
+                cached[(index_column, index_row)] = self._item_lists[index_column][index_row]
+
+
 
         for (index_row, index_column) in index_list:
             if index_column == target_column:
                 # Merge operation
                 merged = True
-                source_item = self._item_lists[target_column][index_row][0]
-                target_item = self._item_lists[target_column][target_row][0]
+
+                source_item = cached[(target_column, index_row)]
+                target_item = cached[(target_column, target_row)]
 
                 # Merging an item with itself is useless
                 if source_item == target_item:
                     return False
+
+                self.changed.emit()
 
                 recipes_ids = recipes_ids.union([recipe.id for recipe in source_item.recipes])
                 self.beginRemoveRows(self.createIndex(self.root_row, 0, self.Columns.ROOT), index_row, index_row)
@@ -307,21 +323,22 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 self._session.delete(source_item)
             else:
                 # Append operation. Only allowed on Cuisine or Ingredients
-                target_item = self._item_lists[target_column][target_row][0]
+                self.changed.emit()
+                #target_item = self._item_lists[target_column][target_row][0]
+                target_item = cached[(target_column, target_row)]
                 parent_index = self._parent_row[target_column]
                 self.beginRemoveRows(self.createIndex(parent_index, 0, self.Columns.ITEMS), index_row, index_row)
                 if self.root_row == self.RootItems.CUISINE:
-                    recipe = self._item_lists[index_column][index_row]
+                    recipe = cached[(index_column, index_row)]
                     recipe.cuisine = target_item
 
                 elif self.root_row == self.RootItems.INGREDIENTS:
-                    ingredient_list_entry = self._item_lists[index_column][index_row]
+                    ingredient_list_entry = cached[(index_column, index_row)]
                     ingredient_list_entry.ingredient = target_item
                 self._session.refresh(target_item)
 
-        self.endRemoveRows()
-        self.changed.emit()
-        if merged:
+            self.endRemoveRows()
+        if merged and False:
             self.changeSelection.emit(parent)
 
         return True
@@ -420,6 +437,18 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         mime_data = QtCore.QMimeData()
         mime_data.setData(self.mime_type, pickle.dumps(index_list))
         return mime_data
+
+    def new_ingredient_item(self):
+        """
+        A new ingredient item has been added to the database
+
+        Returns:
+
+        """
+
+        # Instead of inserting rows and so on just reload the list of ingredients :-)
+        ingredient_index = self.createIndex(self.RootItems.INGREDIENTS, 0, 0)
+        self.dataChanged.emit(ingredient_index, ingredient_index)
 
     def parent(self, child: QtCore.QModelIndex) -> QtCore.QModelIndex:
 

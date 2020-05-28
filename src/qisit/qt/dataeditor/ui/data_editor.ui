@@ -442,6 +442,7 @@
    <addaction name="actionSave"/>
    <addaction name="actionRevert"/>
    <addaction name="separator"/>
+   <addaction name="actionAdd_Ingredient"/>
    <addaction name="actionDelete"/>
   </widget>
   <action name="actionSave">
@@ -477,7 +478,19 @@
      <normaloff>:/icons/minus.png</normaloff>:/icons/minus.png</iconset>
    </property>
    <property name="text">
-    <string>Delete</string>
+    <string>Delete Item(s)</string>
+   </property>
+  </action>
+  <action name="actionAdd_Ingredient">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/plus.png</normaloff>:/icons/plus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Ingredient</string>
    </property>
   </action>
  </widget>

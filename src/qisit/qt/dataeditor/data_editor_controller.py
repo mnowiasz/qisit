@@ -142,10 +142,12 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.setWindowTitle(f"{self.windowTitle()} [*]")
         self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
 
+        self.actionAdd_Ingredient.triggered.connect(self.actionAdd_Ingredient_triggered)
         self.actionDelete.triggered.connect(self.actionDelete_triggered)
         self.actionSave.triggered.connect(self.actionSave_triggered)
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
 
+        self.dataColumnView.addAction(self.actionAdd_Ingredient)
         self.dataColumnView.addAction(self.actionDelete)
         self.dataColumnView.selectionModel().selectionChanged.connect(self.dataColumnView_selectionChanged)
         self.dataColumnView.updatePreviewWidget.connect(self.dataColumnView_updatePreviewWidget)
@@ -171,6 +173,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.recipeListView.setWordWrap(True)
         self.recipeListView.doubleClicked.connect(self.recipeListView_doubleclicked)
 
+        self.tabWidget.currentChanged.connect(lambda index: self.toggle_actions(None))
+
         self.dataColumnView.setPreviewWidget(self.recipeListView)
 
         self._load_ui_states()
@@ -190,6 +194,29 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.setWindowModified(modified)
         self.actionSave.setEnabled(modified)
         self.actionRevert.setEnabled(modified)
+
+    def actionAdd_Ingredient_triggered(self, checked: bool=False):
+        """
+        Asks the user for a new ingredient
+
+        Args:
+            checked (): Ignored
+
+        Returns:
+
+        """
+
+        _translate = translate
+        new_ingredient_name, ok = Qt.QInputDialog.getText(self, _translate("DataEditor", "Add New Ingredient"),
+                                                        _translate("DataEditor", "New Ingredient"))
+        if ok:
+            new_ingredient_name = nullify(new_ingredient_name)
+            if new_ingredient_name:
+                self.set_modified()
+                new_ingredient_name = data.Ingredient.get_or_add_ingredient(self._session, new_ingredient_name)
+                self._item_model.new_ingredient_item()
+
+
 
     def actionDelete_triggered(self, checked: bool = False):
         """
@@ -248,7 +275,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
     def dataColumnView_selectionChanged(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
         """
-        The selection has been changed. Used to enable/disable the delete action and to load the stacked widget
+        The selection has been changed. Used to enable/disable the actions (add ingredient/delete) and to
+        load the stacked widget
 
         Args:
             selected (): Selected indexes
@@ -258,11 +286,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         """
 
-        delete_action_enabled = False
-
-        for index in selected.indexes():
-            delete_action_enabled |= self._item_model.is_deletable(index)
-        self.actionDelete.setEnabled(delete_action_enabled)
+        self.toggle_actions(selected.indexes())
         self.load_stackedwidget(selected.indexes())
 
     def dataColumnView_updatePreviewWidget(self, index: QtCore.QModelIndex):
@@ -553,6 +577,36 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         self.okButton.setEnabled(True)
         self.cancelButton.setEnabled(True)
+
+    def toggle_actions(self, selected_indexes: typing.Iterable = None):
+        """
+        Enable / disable the actions depending on the selection and the visible page
+
+        Args:
+            selected_indexes (): The selected indexes or None
+
+        Returns:
+
+        """
+
+        if selected_indexes is None:
+            selected_indexes = self.dataColumnView.selectedIndexes()
+
+        model = self._item_model
+
+        delete_action_enabled = False
+        addingredient_action_enabled = False
+
+        # The actions make only sense on the the first tab
+        if self.tabWidget.currentIndex() == 0:
+            for index in selected_indexes:
+                delete_action_enabled |= self._item_model.is_deletable(index)
+                if index.internalId() == model.Columns.ROOT:
+                    addingredient_action_enabled |= (index.row() == model.RootItems.INGREDIENTS)
+                else:
+                    addingredient_action_enabled |= model.root_row == model.RootItems.INGREDIENTS
+        self.actionAdd_Ingredient.setEnabled(addingredient_action_enabled)
+        self.actionDelete.setEnabled(delete_action_enabled)
 
     def typeComboBox_currentIndexChanged(self, index: int):
         self.stackedwidget_edited()
