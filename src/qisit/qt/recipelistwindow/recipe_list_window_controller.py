@@ -754,10 +754,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         """
         entries_per_page = self.recipesPerPagecomboBox.itemData(index)
         self.table_model.recipes_per_page = entries_per_page
-
-        # No need to reload the model if the entries per page exceed the available entries
-        if entries_per_page < self.table_model.number_of_filtered_recipes:
-            self._reload_model()
+        self._reload_model()
 
     def previousPageButton_clicked(self):
         """
