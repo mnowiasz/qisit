@@ -56,6 +56,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     changed = QtCore.pyqtSignal()
     """ Data have been changed """
 
+    changeSelection = QtCore.pyqtSignal(QtCore.QModelIndex)
+    """ Tell the view to change it's selection to the index. This is also a workaround for a strange bug:
+    When merging two or more items *and* a ingredient unit has been selected the selection becomes odd and
+    the first column is duplicated. Odd. """
+
     def __init__(self, session: orm.Session):
 
         super().__init__()
@@ -68,8 +73,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # is overkill in this case - this is used to store *which row* has been selected as a parent in the given
         # column.
         self._parent_row = {}
-
-        self._model_changed = False
 
         # Table, Text, Icon.
         self._first_column = {}
@@ -222,7 +225,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
     def delete_item(self, index: QtCore.QModelIndex):
         """
-        Delete an item (if allowed, that is)
+        Deletes an item (if allowed, that is)
 
         Args:
             index (): The index
@@ -246,17 +249,18 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         index_list = pickle.loads(mimedata.data(self.mime_type))
         target_row = parent.row()
-        # Not used  currently - only drops on the Item columns are allowed
         target_column = parent.internalId()
 
-        # The affeced recipes
+        # The affected recipes
         recipes_ids = set()
-        self.changed.emit()
+
+        # Merge vs append
+        merged = False
 
         for (index_row, index_column) in index_list:
             if index_column == target_column:
                 # Merge operation
-
+                merged = True
                 source_item = self._item_lists[target_column][index_row][0]
                 target_item = self._item_lists[target_column][target_row][0]
 
@@ -316,6 +320,10 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 self._session.refresh(target_item)
 
         self.endRemoveRows()
+        self.changed.emit()
+        if merged:
+            self.changeSelection.emit(parent)
+
         return True
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
@@ -519,7 +527,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             # User has double clicked without changing the value
             return False
 
-        # Test if the value already exists - but only in case of items. The seconds
+        # Test if the value already exists - but only in case of items.
         if column == self.Columns.ITEMS:
             the_table = self._first_column[root_row][0]
             print(the_table)

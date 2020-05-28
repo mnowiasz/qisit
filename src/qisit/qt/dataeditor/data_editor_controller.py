@@ -79,6 +79,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.setupUi(self)
         self._item_model = data_editor_model.DataEditorModel(self._session)
         self._item_model.changed.connect(self.set_modified)
+        self._item_model.changeSelection.connect(self.change_selection)
         self.dataColumnView.setModel(self._item_model)
 
         self._unit_conversion_model = conversion_table_model.ConversionTableModel(self._session)
@@ -146,7 +147,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.actionRevert.triggered.connect(self.actionRevert_triggered)
 
         self.dataColumnView.addAction(self.actionDelete)
-        #self.dataColumnView.doubleClicked.connect(self.dataColumnView_doubleclicked)
         self.dataColumnView.selectionModel().selectionChanged.connect(self.dataColumnView_selectionChanged)
         self.dataColumnView.updatePreviewWidget.connect(self.dataColumnView_updatePreviewWidget)
 
@@ -217,6 +217,18 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         if self._selected_index:
             self.load_stackedwidget([self._selected_index, ])
 
+    def change_selection(self, index: QtCore.QModelIndex):
+        """
+        When two (or more) items are merged change the selection to the merged item
+
+        Args:
+            index (): The merged index
+
+        Returns:
+
+        """
+        self.dataColumnView.selectionModel().setCurrentIndex(index, QtCore.QItemSelectionModel.ClearAndSelect)
+
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         """
         Window has been closed by the user
@@ -245,6 +257,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         Returns:
 
         """
+
         delete_action_enabled = False
 
         for index in selected.indexes():
