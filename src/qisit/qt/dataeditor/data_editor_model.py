@@ -560,9 +560,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # Test if the value already exists - but only in case of items.
         if column == self.Columns.ITEMS:
             the_table = self._first_column[root_row][0]
-            print(the_table)
-            print(f"value = {value}")
-
             duplicate = self._session.query(the_table).filter(the_table.name == value).first()
             if duplicate:
                 if duplicate == item:
