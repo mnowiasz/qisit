@@ -338,7 +338,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 self._session.refresh(target_item)
 
             self.endRemoveRows()
-        if merged and False:
+
+        if merged:
             self.changeSelection.emit(parent)
 
         return True
