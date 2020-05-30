@@ -97,6 +97,20 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._recipe_list_model = recipe_list_model.RecipeListModel()
         self.init_ui()
 
+    def _get_item_for_stackedwidget(self, selected_index: QtCore.QModelIndex):
+
+
+        model = self._item_model
+        column = selected_index.internalId()
+
+        the_item = None
+        if column == model.Columns.INGREDIENTLIST_ENTRIES:
+            # Ingredient list items
+            the_item = model.get_item(selected_index.row(), column)
+        else:
+            the_item = model.get_item(selected_index.row(), column)[0]
+        return the_item
+
     def _load_ui_states(self):
         """
         Loads the previously saved UI stated
@@ -379,12 +393,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             model = self._item_model
             column = selected_index.internalId()
 
-            the_item = None
-            if column == model.Columns.INGREDIENTLIST_ENTRIES:
-                # Ingredient list items
-                the_item = model.get_item(selected_index.row(), column)
-            else:
-                the_item = model.get_item(selected_index.row(), column)[0]
+            the_item = self._get_item_for_stackedwidget(selected_index)
 
             # Common to all items
             self.nameLineEdit.setReadOnly(False)
@@ -451,18 +460,10 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             # Huh?
             return
 
-        # ToDo: Merge with load_stackedwidget
-        column = self._selected_index.internalId()
         model = self._item_model
         stackedwidget_index = self.stackedWidget.currentIndex()
 
-        the_item = None
-        if column == model.Columns.INGREDIENTLIST_ENTRIES:
-            # Ingredient list items
-            the_item = model.get_item(self._selected_index.row(), column)
-        else:
-            the_item = model.get_item(self._selected_index.row(), column)[0]
-
+        the_item = self._get_item_for_stackedwidget(self._selected_index)
         new_name = nullify(self.nameLineEdit.text())
         self.set_modified()
         if new_name is None:
