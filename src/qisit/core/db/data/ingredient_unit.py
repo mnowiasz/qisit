@@ -51,10 +51,6 @@ class IngredientUnit(db.Base):
 
     __tablename__ = "ingredient_unit"
 
-    # TODO: Replace this by using the base units dictionary
-    unit_group = None
-    """ The pseudo unit a group has. units can't be NULL/None, hence this construct """
-
     id = sql.Column(sql.Integer, primary_key=True)
     """ Primary Key """
 
@@ -167,7 +163,8 @@ class IngredientUnit(db.Base):
         cls.base_units[cls.UnitType.VOLUME] = session.query(IngredientUnit).filter(
             IngredientUnit.name == "volume-milliliter").first()
         cls.base_units[cls.UnitType.QUANTITY] = session.query(IngredientUnit).filter(IngredientUnit.name == "").first()
-        cls.base_units[cls.UnitType.GROUP] = cls.unit_group
+        cls.base_units[cls.UnitType.GROUP] = session.query(IngredientUnit).filter(
+            IngredientUnit.type_ == cls.UnitType.GROUP)
 
     def __init__(self, name: str, type_: UnitType = UnitType.QUANTITY, cldr: bool = False, factor=None,
                  description: str = None):
@@ -194,6 +191,11 @@ class IngredientUnit(db.Base):
 
     def __str__(self):
         return self.name
+
+    @property
+    def unit_group(self):
+        """ The pseudo unit a group has. units can't be NULL/None, hence this construct """
+        return self.base_units[self.UnitType.GROUP]
 
     def unit_string(self):
         """

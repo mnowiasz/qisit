@@ -18,6 +18,7 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 import math
+import pickle
 import typing
 from enum import IntEnum
 
@@ -56,12 +57,14 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
     firstColumnSpanned = QtCore.pyqtSignal(int, QtCore.QModelIndex)
     """ Emitted when a group has been added to model """
 
+    mime_type = "application/x-qisit-dataeditor"
+    """ Drag & Drop """
+
     def __init__(self, recipe: data.Recipe):
         super().__init__()
         self._translate = translate
         self._recipe = recipe
         self.__editable = False
-        self._dragged_indices = []
 
         # For the group
         self._bold_font = QtGui.QFont()
@@ -338,7 +341,8 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
         # the tree's content each time a drag has occurred - and causing database load - or renumber the tree only
         # when the user saves the changes, making it more difficult to determine the item's status
         # (group, alternative..)
-        for index in self._dragged_indices:
+        index_list = pickle.loads(mime_data.data(self.mime_type))
+        for index in index_list:
             parent_item = index.parent()
 
             # -------------------- Groups ---------------------
@@ -515,13 +519,12 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
         if dropped:
             self._set_alternatives_text(self.invisibleRootItem().index())
             current_row = row
-
+            index_list = pickle.loads(mime_data.data(self.mime_type))
             # If a group has been moved, restore the column spanning
-            for item in self._dragged_indices:
-                if data.IngredientListEntry.is_group(int(item.data(QtCore.Qt.UserRole))):
+            for index in index_list:
+                if data.IngredientListEntry.is_group(int(index.data(QtCore.Qt.UserRole))):
                     self.firstColumnSpanned.emit(current_row, self.invisibleRootItem().index())
                 current_row += 1
-            self._dragged_indices.clear()
         return dropped
 
     def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...) -> typing.Any:
@@ -605,14 +608,11 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
 
         """
 
-        # It's far, far easier to use a internal list than to encode/decode the indices in the mime data. This might
-        # not be very elegant, but's it easier
-        # TODO: Use pickle
-        self._dragged_indices = []
-        for index in indexes:
-            if index.column() == self.IngredientColumns.INGREDIENT:
-                self._dragged_indices.append(index)
-        return super().mimeData(indexes)
+        index_list = [(index.row(), index.column()) for index in indexes if index.column() == self.IngredientColumns.INGREDIENT]
+
+        mime_data = QtCore.QMimeData()
+        mime_data.setData(self.mime_type, pickle.dumps(index_list))
+        return mime_data
 
     def save_tree(self, session: orm.Session):
         """
