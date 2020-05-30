@@ -40,7 +40,7 @@ def qtmain():
     QtCore.QCoreApplication.setOrganizationDomain("qisit.app")
     QtCore.QCoreApplication.setOrganizationName("qisit")
     QtCore.QCoreApplication.setApplicationName("qisit")
-    QtCore.QCoreApplication.setApplicationVersion("0.5.1")
+    QtCore.QCoreApplication.setApplicationVersion("0.5.2")
 
     # CTRL-C
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -76,8 +76,7 @@ def qtmain():
     misc.setup()
 
     app.exec_()
-    orm.session.close_all_sessions()
-
+    session.close()
 
 if __name__ == '__main__':
     qtmain()
