@@ -87,7 +87,6 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._bold_font = QtGui.QFont()
         self._bold_font.setBold(True)
 
-
         # Used to determine  if there's already a (nested) transaction going on or if a new one should be started
         self._transaction_started = False
 

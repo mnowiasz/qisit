@@ -60,4 +60,5 @@ class Ui_timeEditor(object):
         _translate = QtCore.QCoreApplication.translate
         timeEditor.setWindowTitle(_translate("timeEditor", "Form"))
         self.clearButton.setText(_translate("timeEditor", "Clear"))
-from qisit.qt.resources import resources_rc
+
+

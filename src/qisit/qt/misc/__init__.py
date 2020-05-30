@@ -15,3 +15,12 @@
 #  You should have received a copy of the GNU General Public License
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
+""" Utility things """
+from PyQt5 import QtWidgets
+
+errorMessage: QtWidgets.QErrorMessage = None
+
+
+class ErrorValue():
+    """ Global definition for error values """
+    illegal_value = "Illegal Value"

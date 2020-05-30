@@ -18,11 +18,12 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 from PyQt5 import QtWidgets, Qt
-from qisit.qt.recipewindow.ui import time_editor
 from babel.units import get_unit_name
 
-class TimeEditor(QtWidgets.QWidget, time_editor.Ui_timeEditor):
+from qisit.qt.recipewindow.ui import time_editor
 
+
+class TimeEditor(QtWidgets.QWidget, time_editor.Ui_timeEditor):
     valueChanged = Qt.pyqtSignal(int)
     """ Emitted when the value has changed """
 
@@ -46,7 +47,7 @@ class TimeEditor(QtWidgets.QWidget, time_editor.Ui_timeEditor):
              seconds
 
         """
-        return (self.daysSpinBox.value() * 60 *24 + self.hoursSpinBox.value() * 60 + self.minutesSpinBox.value()) * 60
+        return (self.daysSpinBox.value() * 60 * 24 + self.hoursSpinBox.value() * 60 + self.minutesSpinBox.value()) * 60
 
     @value.setter
     def value(self, new_value: int):
@@ -89,4 +90,3 @@ class TimeEditor(QtWidgets.QWidget, time_editor.Ui_timeEditor):
 
     def spinBox_valueChanged(self, new_value: int):
         self.valueChanged.emit(new_value)
-

@@ -65,7 +65,7 @@ class EditorDelegate(QtWidgets.QStyledItemDelegate):
     beginEditing = QtCore.pyqtSignal()
     """ Emitted when the text is being edited """
 
-    def __init__(self,  completer: QtWidgets.QCompleter = None):
+    def __init__(self, completer: QtWidgets.QCompleter = None):
         super().__init__()
         self._completer = completer
 

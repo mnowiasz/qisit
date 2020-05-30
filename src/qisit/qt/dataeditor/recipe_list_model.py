@@ -15,16 +15,10 @@
 #  You should have received a copy of the GNU General Public License
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
-import pickle
 import typing
-from enum import IntEnum
 
-from PyQt5 import QtCore, QtGui
-from sqlalchemy import orm, func, text
+from PyQt5 import QtCore
 
-from qisit import translate
-from qisit.core.db import data
-from qisit.core.util import nullify
 
 class RecipeListModel(QtCore.QAbstractListModel):
     def __init__(self):
@@ -38,12 +32,6 @@ class RecipeListModel(QtCore.QAbstractListModel):
         if role == QtCore.Qt.DisplayRole:
             return QtCore.QVariant(self._recipe_list[index.row()].title)
         return QtCore.QVariant()
-
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...) -> typing.Any:
-        _translate = translate
-        print("Hui")
-        if role == QtCore.Qt.DisplayRole and orientation ==QtCore.Qt.Horizontal:
-            return QtCore.QVariant(_translate("DataEditor", "Recipes"))
 
     def columnCount(self, parent: QtCore.QModelIndex = ...) -> int:
         return 1

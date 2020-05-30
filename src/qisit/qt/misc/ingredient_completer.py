@@ -16,10 +16,11 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 import typing
-from qisit.core.db import data
-from PyQt5 import Qt, QtCore, QtGui, QtWidgets
-from babel.numbers import format_decimal, parse_decimal, NumberFormatError
+
+from PyQt5 import QtCore, QtWidgets
 from sqlalchemy import orm, func
+
+from qisit.core.db import data
 
 
 class IngredientCompleter(QtWidgets.QCompleter):
@@ -27,6 +28,7 @@ class IngredientCompleter(QtWidgets.QCompleter):
 
     class _CompleterModel(QtCore.QAbstractListModel):
         """ It's model. For some reasons mulitple inheritance doesn't work here .."""
+
         def __init__(self, session: orm.Session):
             self._session = session
             self._ingredient_list = []
@@ -34,7 +36,8 @@ class IngredientCompleter(QtWidgets.QCompleter):
             super().__init__()
 
         def _load_model(self):
-            self._ingredient_list = self._session.query(data.Ingredient).order_by(func.lower(data.Ingredient.name)).all()
+            self._ingredient_list = self._session.query(data.Ingredient).order_by(
+                func.lower(data.Ingredient.name)).all()
 
         def reload_model(self):
             self.beginResetModel()
@@ -52,10 +55,9 @@ class IngredientCompleter(QtWidgets.QCompleter):
     def __init__(self, session: orm.Session):
         self._session = session
         self._model = self._CompleterModel(self._session)
-        super(QtWidgets.QCompleter, self).__init__(self._model, None)
+        super().__init__(self._model, None)
         self.setCompletionRole(QtCore.Qt.DisplayRole)
         self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
 
     def reload_model(self):
         self._model.reload_model()
-

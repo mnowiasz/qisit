@@ -195,7 +195,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.actionSave.setEnabled(modified)
         self.actionRevert.setEnabled(modified)
 
-    def actionAdd_Ingredient_triggered(self, checked: bool=False):
+    def actionAdd_Ingredient_triggered(self, checked: bool = False):
         """
         Asks the user for a new ingredient
 
@@ -208,15 +208,13 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         _translate = translate
         new_ingredient_name, ok = Qt.QInputDialog.getText(self, _translate("DataEditor", "Add New Ingredient"),
-                                                        _translate("DataEditor", "New Ingredient"))
+                                                          _translate("DataEditor", "New Ingredient"))
         if ok:
             new_ingredient_name = nullify(new_ingredient_name)
             if new_ingredient_name:
                 self.set_modified()
                 new_ingredient_name = data.Ingredient.get_or_add_ingredient(self._session, new_ingredient_name)
                 self._item_model.new_ingredient_item()
-
-
 
     def actionDelete_triggered(self, checked: bool = False):
         """
@@ -301,7 +299,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         else:
             item = data[0]
             recipe_list = [recipe for recipe in item.recipes]
-
 
         self._recipe_list_model.set_recipe_list(recipe_list)
 

@@ -254,7 +254,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         # The affected recipes
         recipes_ids = set()
 
-
         # Merge vs append
         merged = False
         cached = {}
@@ -267,8 +266,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                 cached[(target_column, index_row)] = self._item_lists[target_column][index_row][0]
             else:
                 cached[(index_column, index_row)] = self._item_lists[index_column][index_row]
-
-
 
         for (index_row, index_column) in index_list:
             if index_column == target_column:
@@ -324,7 +321,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             else:
                 # Append operation. Only allowed on Cuisine or Ingredients
                 self.changed.emit()
-                #target_item = self._item_lists[target_column][target_row][0]
+                # target_item = self._item_lists[target_column][target_row][0]
                 target_item = cached[(target_column, target_row)]
                 parent_index = self._parent_row[target_column]
                 self.beginRemoveRows(self.createIndex(parent_index, 0, self.Columns.ITEMS), index_row, index_row)
@@ -417,7 +414,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
         # These can be deleted in any case
         if self.root_row in (
-        self.RootItems.AUTHOR, self.RootItems.CATEGORIES, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
+                self.RootItems.AUTHOR, self.RootItems.CATEGORIES, self.RootItems.CUISINE, self.RootItems.YIELD_UNITS):
             return True
 
         # All other items may be only deleted if they are "empty" i.e. have no children
