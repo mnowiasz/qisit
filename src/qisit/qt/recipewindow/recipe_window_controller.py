@@ -900,9 +900,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.modified = False
         self._transaction_started = False
         self._session.refresh(self._recipe)
-
-        # The user might have added some units which are no longer available after the rollback
-        data.IngredientUnit.update_unit_dict(self._session)
+        self._unit_combobox_model.reload_model()
         self._ingredient_completer.reload_model()
         self.load_data()
         if not self.editable:

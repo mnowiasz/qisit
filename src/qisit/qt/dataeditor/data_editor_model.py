@@ -99,9 +99,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         self._baseunit_font.setBold(True)
         self._baseunit_font.setItalic(True)
 
-        # Recipes that are affected by the changes
-        self.affected_recipe_ids = set()
-
     def __setup_first_column(self):
         _translate = translate
         # Table, Item, Icon
@@ -239,8 +236,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             index_row = index.row()
             self.beginRemoveRows(self.createIndex(self.root_row, 0, self.Columns.ROOT), index_row, index_row)
             the_item = self._item_lists[index.internalId()][index_row][0]
-            recipe_ids = [recipe.id for recipe in the_item.recipes]
-            self.affected_recipe_ids = self.affected_recipe_ids.union(recipe_ids)
             self._session.delete(the_item)
             self.endRemoveRows()
 
@@ -457,16 +452,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
         return self.createIndex(self._parent_row[child_column - 1], 0, child_column - 1)
 
-    def reset(self):
-        """
-        Resets the model to the last state.
-
-        Returns:
-
-        """
-
-        self.affected_recipe_ids.clear()
-
     def rowCount(self, parent: QtCore.QModelIndex = ...) -> int:
         if parent.row() == -1:
             return self.RootItems.YIELD_UNITS + 1
@@ -545,10 +530,8 @@ class DataEditorModel(QtCore.QAbstractItemModel):
         item = None
         if column == self.Columns.INGREDIENTLIST_ENTRIES:
             item = self._item_lists[self.Columns.INGREDIENTLIST_ENTRIES][row]
-            changed_recipes = [item.recipe_id, ]
         else:
             item = self._item_lists[column][row][0]
-            changed_recipes = [recipe.id for recipe in item.recipes]
 
         if item.name == value:
             # User has double clicked without changing the value
@@ -576,7 +559,6 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     return False
 
         self.changed.emit()
-        self.affected_recipe_ids = self.affected_recipe_ids.union(changed_recipes)
         item.name = value
         self.dataChanged.emit(index, index)
         return True

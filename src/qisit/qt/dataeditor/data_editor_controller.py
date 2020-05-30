@@ -63,8 +63,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         INGREDIENTS = 2
         INGREDIENT_UNIT = 3
 
-    dataCommited = QtCore.pyqtSignal(set)
-    """ Emitted (including a list/set of affected Recipe IDs) when the data has been committed """
+    dataCommited = QtCore.pyqtSignal()
+    """ Emitted when the data has been committed """
 
     recipeDoubleClicked = QtCore.pyqtSignal(data.Recipe)
     """ Emitted when the user double clicked on a recipe so the RecipeListController may open/show the recipe """
@@ -515,7 +515,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         elif stackedwidget_index == self.StackedItems.INGREDIENTS:
             the_item.icon = self._ingredient_icon
-            model.affected_recipe_ids = model.affected_recipe_ids.union([recipe.id for recipe in the_item.recipes])
+
 
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)
@@ -539,7 +539,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             self._session.rollback()
 
         self._transaction_started = False
-        self._item_model.reset()
         self.dataColumnView.reset()
         self._unit_conversion_model.reload_model()
         self.modified = False
@@ -560,8 +559,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._session.commit()
         self.modified = False
         self._transaction_started = False
-        self.dataCommited.emit(self._item_model.affected_recipe_ids)
-        self._item_model.affected_recipe_ids.clear()
+        self.dataCommited.emit()
 
     @_Decorators.change
     def set_modified(self):

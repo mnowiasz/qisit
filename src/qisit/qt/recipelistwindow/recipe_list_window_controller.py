@@ -639,12 +639,12 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         """
         # TODO: Ask
-        if self._recipe_windows:
-            for recipe_window in self._recipe_windows.values():
-                recipe_window.destroyed.disconnect()
-                recipe_window.close()
-        if self._data_editor:
-            self._data_editor.close()
+        #if self._recipe_windows:
+        #    for recipe_window in self._recipe_windows.values():
+        #        recipe_window.destroyed.disconnect()
+        #        recipe_window.close()
+        #if self._data_editor:
+        #    self._data_editor.close()
         if self.modified:
             self._session.rollback()
             self.modified = False
@@ -653,18 +653,20 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         QtCore.QCoreApplication.quit()
         event.accept()
 
-    def dataeditor_commited(self, affected_recipe_ids: set):
+    def dataeditor_commited(self):
         self.modified = True
         self.update_filters()
         self._reload_model()
+        # The user might have added some units which are no longer available after the rollback
+        data.IngredientUnit.update_unit_dict(self._session)
 
         # Note: This will create some surprising results if the recipe has been altered (and not saved) - the data
         # concerning the recipe will be reset in the data editor. This is because of different transactions and
         # rollbacks: The data editor commits its data into one transaction, the recipe window commits a rollback in
         # another transaction
-        for recipe_id in affected_recipe_ids:
-            if recipe_id in self._recipe_windows:
-                self._recipe_windows[recipe_id].revert_data()
+
+        for recipe_window in self._recipe_windows.values():
+            recipe_window.revert_data()
 
 
     def firstPageButton_clicked(self):
