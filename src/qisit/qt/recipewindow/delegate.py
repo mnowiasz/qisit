@@ -63,12 +63,18 @@ class EditorDelegate(QtWidgets.QStyledItemDelegate):
     """ Used to signal editing and item in the tree (so the recipe window can set itself to be modified) """
 
     beginEditing = QtCore.pyqtSignal()
-    """ Emitted when the description is being edited """
+    """ Emitted when the text is being edited """
 
-    def __init__(self):
+    def __init__(self,  completer: QtWidgets.QCompleter = None):
         super().__init__()
+        self._completer = completer
 
     def createEditor(self, parent: QtWidgets.QWidget, option: Qt.QStyleOptionViewItem,
                      index: QtCore.QModelIndex) -> QtWidgets.QWidget:
         self.beginEditing.emit()
-        return super().createEditor(parent, option, index)
+        if self._completer is not None:
+            widget = QtWidgets.QLineEdit(parent)
+            widget.setCompleter(self._completer)
+            return widget
+        else:
+            return super().createEditor(parent, option, index)

@@ -26,6 +26,7 @@ from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify, zero_to_none
 from qisit.qt.misc.lstrip_validator import LStripValidator
+from qisit.qt.misc.ingredient_completer import IngredientCompleter
 from qisit.qt.recipewindow.combobox_model import DBComboBoxModel, UnitComboBoxModel
 from qisit.qt.recipewindow.delegate import AmountDelegate, EditorDelegate
 from qisit.qt.recipewindow.image_table_model import ImageTableModel
@@ -86,11 +87,11 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._bold_font = QtGui.QFont()
         self._bold_font.setBold(True)
 
+
         # Used to determine  if there's already a (nested) transaction going on or if a new one should be started
         self._transaction_started = False
 
         # Comboboxes
-
         self._author_combobox_model = DBComboBoxModel(self._session, data.Author)
         self._cuisine_combobox_model = DBComboBoxModel(self._session, data.Cuisine)
         self._yield_combobox_model = DBComboBoxModel(self._session, data.YieldUnitName)
@@ -106,7 +107,8 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.setupUi(self)
 
         self._amount_delegate = AmountDelegate()
-        self._ingredient_delegate = EditorDelegate()
+        self._ingredient_completer = IngredientCompleter(self._session)
+        self._ingredient_delegate = EditorDelegate(self._ingredient_completer)
         self._image_description_delegate = EditorDelegate()
         self._text_edits = (self.descriptionPlainTextEdit, self.instructionsPlainTextEdit, self.notesPlainTextEdit)
 
@@ -737,6 +739,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.alternativeCheckBox.setText(self._ingredient_treeview_model.alternative_or)
         self.newIngredientAmountEditor.unitComboBox.setModel(self._unit_combobox_model)
         self.newIngredientLineEdit.setValidator(self._lstrip_validator)
+        self.newIngredientLineEdit.setCompleter(self._ingredient_completer)
         for checkbox in (self.isGroupCheckBox, self.optionalCheckbox, self.alternativeCheckBox):
             checkbox.clicked.connect(self.addNewIngredientCheckboxes_clicked)
 
@@ -900,6 +903,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         # The user might have added some units which are no longer available after the rollback
         data.IngredientUnit.update_unit_dict(self._session)
+        self._ingredient_completer.reload_model()
         self.load_data()
         if not self.editable:
             self._load_markdown_textedits()
