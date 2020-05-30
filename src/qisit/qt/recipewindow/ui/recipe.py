@@ -95,6 +95,11 @@ class Ui_RecipeWindow(object):
         self.imageButtonsHorizontalLayout.setObjectName("imageButtonsHorizontalLayout")
         self.addImagesButton = QtWidgets.QPushButton(self.layoutWidget)
         self.addImagesButton.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.addImagesButton.sizePolicy().hasHeightForWidth())
+        self.addImagesButton.setSizePolicy(sizePolicy)
         self.addImagesButton.setFocusPolicy(QtCore.Qt.NoFocus)
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(":/icons/plus.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -146,8 +151,7 @@ class Ui_RecipeWindow(object):
         sizePolicy.setHeightForWidth(self.lastCookedDateEdit.sizePolicy().hasHeightForWidth())
         self.lastCookedDateEdit.setSizePolicy(sizePolicy)
         self.lastCookedDateEdit.setReadOnly(False)
-        self.lastCookedDateEdit.setMaximumDateTime(
-            QtCore.QDateTime(QtCore.QDate(9999, 12, 28), QtCore.QTime(23, 59, 59)))
+        self.lastCookedDateEdit.setMaximumDateTime(QtCore.QDateTime(QtCore.QDate(9999, 12, 28), QtCore.QTime(23, 59, 59)))
         self.lastCookedDateEdit.setCalendarPopup(True)
         self.lastCookedDateEdit.setObjectName("lastCookedDateEdit")
         self.gridLayout.addWidget(self.lastCookedDateEdit, 8, 2, 1, 2)
@@ -693,8 +697,7 @@ class Ui_RecipeWindow(object):
         self.preparationTimeLineEdit.setPlaceholderText(_translate("RecipeWindow", "Preparation time"))
         self.cookingTimeLineEdit.setPlaceholderText(_translate("RecipeWindow", "Cooking Time"))
         self.totalTimeLineEdit.setPlaceholderText(_translate("RecipeWindow", "Total Time"))
-        self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.mainTab),
-                                      _translate("RecipeWindow", "Information"))
+        self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.mainTab), _translate("RecipeWindow", "Information"))
         self.descriptionGroupBox.setTitle(_translate("RecipeWindow", "Description"))
         self.descriptionPlainTextEdit.setPlaceholderText(_translate("RecipeWindow", "Description"))
         self.descriptionMarkDownTextEdit.setPlaceholderText(_translate("RecipeWindow", "Description"))
@@ -703,8 +706,7 @@ class Ui_RecipeWindow(object):
         self.notesGroupBox.setTitle(_translate("RecipeWindow", "Notes"))
         self.notesPlainTextEdit.setPlaceholderText(_translate("RecipeWindow", "Own notes/comments"))
         self.notesMarkdownTextEdit.setPlaceholderText(_translate("RecipeWindow", "Own notes/comments"))
-        self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.instructionsTab),
-                                      _translate("RecipeWindow", "Instructions"))
+        self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.instructionsTab), _translate("RecipeWindow", "Instructions"))
         self.newIngredientLineEdit.setPlaceholderText(_translate("RecipeWindow", "Ingredient"))
         self.addNewIngredientButton.setText(_translate("RecipeWindow", "Add Ingredient"))
         self.optionalCheckbox.setText(_translate("RecipeWindow", "Optional"))
@@ -720,8 +722,7 @@ class Ui_RecipeWindow(object):
         self.actionDelete_Ingredients.setToolTip(_translate("RecipeWindow", "Delete Ingredient(s)"))
         self.actionDelete_Image_s.setText(_translate("RecipeWindow", "Delete Image(s)"))
         self.actionAdd_Image_s.setText(_translate("RecipeWindow", "Add Image(s)"))
-
-
 from qisit.qt.recipewindow.amounteditor import AmountEditor
 from qisit.qt.recipewindow.draggingtreeview import DraggingTreeView
 from qisit.qt.recipewindow.timeeditor import TimeEditor
+from qisit.qt.resources import resources_rc

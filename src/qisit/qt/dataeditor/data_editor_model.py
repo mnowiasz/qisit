@@ -25,7 +25,7 @@ from sqlalchemy import orm, func, text
 from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
-
+from qisit.qt import misc
 
 class DataEditorModel(QtCore.QAbstractItemModel):
     class RootItems(IntEnum):
@@ -568,7 +568,11 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                     # 2.) Open a Error dialog telling the user about the problem
                     # 3.) Like in drag&drop, merge both items.
 
-                    # Currently: Choice 1.)
+                    # Currently: #2
+
+                    _translate = translate
+                    error_message = _translate("DataEditor", "There is already an entry named \"{}\"").format(value)
+                    misc.errorMessage.showMessage(error_message, misc.ErrorValue.illegal_value)
                     return False
 
         self.changed.emit()

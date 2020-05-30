@@ -24,6 +24,7 @@ from sqlalchemy import create_engine, orm
 import qisit.core.db as db
 import qisit.core.db.data as data
 from qisit.core.util import initialize_db
+from qisit.qt import misc
 from qisit.qt.recipelistwindow.recipe_list_window_controller import RecipeListWindow
 
 
@@ -72,6 +73,7 @@ def qtmain():
 
     app = QtWidgets.QApplication(sys.argv)
     recipe_list_controller = RecipeListWindow(session)
+    misc.setup()
 
     app.exec_()
     orm.session.close_all_sessions()

@@ -22,12 +22,13 @@ from babel.numbers import format_decimal, parse_decimal, NumberFormatError
 from babel.units import format_unit
 from sqlalchemy import orm
 
+from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
+from qisit.qt import misc
 
 
 class ConversionTableModel(QtCore.QAbstractTableModel):
-
     changed = QtCore.pyqtSignal()
     """ Emitted when data have been changed """
 
@@ -115,16 +116,21 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
             return False
 
         value = nullify(value)
+        _translate = translate
+
         if value is None:
+            misc.errorMessage.showMessage(_translate("DataEditor", "Empty Value!"))
             return False
         try:
             value = float(parse_decimal(value))
         except NumberFormatError:
             # The user has entered something strange.
-            # TODO: Tell him so
+            error_message = _translate("DataEditor", "Illegal value: {}")
+            misc.errorMessage.showMessage(error_message.format(value), misc.ErrorValue.illegal_value)
             return False
 
         if value == 0:
+            misc.errorMessage.showMessage(_translate("DataEditor", "Value is 0!"))
             return False
 
         self.changed.emit()

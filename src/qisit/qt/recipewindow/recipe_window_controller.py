@@ -25,8 +25,9 @@ from sqlalchemy import func, orm
 from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify, zero_to_none
-from qisit.qt.misc.lstrip_validator import LStripValidator
+from qisit.qt import misc
 from qisit.qt.misc.ingredient_completer import IngredientCompleter
+from qisit.qt.misc.lstrip_validator import LStripValidator
 from qisit.qt.recipewindow.combobox_model import DBComboBoxModel, UnitComboBoxModel
 from qisit.qt.recipewindow.delegate import AmountDelegate, EditorDelegate
 from qisit.qt.recipewindow.image_table_model import ImageTableModel
@@ -1018,13 +1019,11 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         _translate = self._translate
         # TODO: settings / last directory
-        image_filter = _translate("RecipeWindow", "Imagefiles ({})").format(" ".join(
-            ["*.{}".format(supported_format.data().decode()) for supported_format in
-             Qt.QImageReader.supportedImageFormats()]))
+
         options = Qt.QFileDialog.Options()
 
         filenames, filter_ = Qt.QFileDialog.getOpenFileNames(self, _translate("RecipeWindow", "Select new Image"),
-                                                             filter=image_filter, options=options)
+                                                             filter=misc.image_filter, options=options)
         if filenames:
             # Workaround similar to ingredient tree: When the first image has been added to the image list
             # The image table will behave oddly - 2 more columns and so on. This is a workaround

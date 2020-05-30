@@ -25,6 +25,7 @@ from sqlalchemy import orm
 from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
+from qisit.qt import misc
 from qisit.qt.dataeditor import data_editor_model, conversion_table_model, recipe_list_model
 from qisit.qt.dataeditor.ui import data_editor
 
@@ -317,14 +318,9 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         _translate = translate
 
-        # TODO: Merge with RecipeWindow/deduplicate
-        image_filter = _translate("DataEditor", "Imagefiles ({})").format(" ".join(
-            ["*.{}".format(supported_format.data().decode()) for supported_format in
-             Qt.QImageReader.supportedImageFormats()]))
         options = Qt.QFileDialog.Options()
-
         filename, filter_ = Qt.QFileDialog.getOpenFileName(self, _translate("DataEditor", "Select an Icon"),
-                                                           filter=image_filter, options=options)
+                                                           filter=misc.image_filter, options=options)
         if not filename:
             return
 
@@ -475,8 +471,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
             # This will take care of saving the value
             model.setData(self._selected_index, new_name, QtCore.Qt.EditRole)
 
-            # Trimmed name
-            self.nameLineEdit.setText(new_name)
+            # Trimmed name / rejected
+            self.nameLineEdit.setText(the_item.name)
 
         # Items with descriptions - Author, Cuisine, Yield Units
         if stackedwidget_index == self.StackedItems.ITEM_WITH_DESCRIPTION:
@@ -500,7 +496,11 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                         try:
                             new_factor = parse_decimal(new_factor)
                         except NumberFormatError:
-                            # The user entered garbage. TODO: Tell him that :-)
+                            # The user has entered something strange.
+                            _translate = translate
+                            error_message = _translate("DataEditor", "Illegal value: {}")
+                            misc.errorMessage.showMessage(error_message.format(new_factor),
+                                                          misc.ErrorValue.illegal_value)
                             new_factor = the_item.factor
                 else:
                     # Unspecific -> no Factor

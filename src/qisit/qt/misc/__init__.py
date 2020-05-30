@@ -16,11 +16,24 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 """ Utility things """
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, Qt
+
+from qisit import translate
 
 errorMessage: QtWidgets.QErrorMessage = None
+image_filter = None
 
 
 class ErrorValue():
     """ Global definition for error values """
     illegal_value = "Illegal Value"
+
+
+def setup():
+    _translate = translate
+    global image_filter, errorMessage
+
+    errorMessage = QtWidgets.QErrorMessage()
+    image_filter = _translate("ImageFilter", "Imagefiles ({})").format(" ".join(
+        ["*.{}".format(supported_format.data().decode()) for supported_format in
+         Qt.QImageReader.supportedImageFormats()]))
