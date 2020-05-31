@@ -61,6 +61,8 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
         self._translate = translate
         self._recipe = recipe
         self.__editable = False
+        self.__immutable = False
+
         self._dragged_indices = []
 
         # For the group
@@ -81,6 +83,17 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
     def editable(self, editable: bool):
         self.__editable = editable
         self._set_items_editable(editable=editable, parent=self.invisibleRootItem().index())
+
+    # This is a workaround for a unexpected problem: When the window has been closed and the UI states are saved,
+    # The Views - at least TreeView - might call setData() - *after* the transaction has been commited/rollbacked
+    # This resulted in a new transaction which would never be closed and caused chaos at the end of the progra
+    @property
+    def immutable(self) -> bool:
+        return self.__immutable
+
+    @immutable.setter
+    def immutable(self, immutable: bool):
+        self.__immutable = immutable
 
     def _get_ingredient_list_indexes(self, parent: QtCore.QModelIndex, index_set: typing.Set[int]):
         """
@@ -671,6 +684,9 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
             self.setData(ingredientlist_rowitem_index, ingredientlist_index, role=QtCore.Qt.DisplayRole)
 
     def setData(self, index: QtCore.QModelIndex, value: typing.Any, role: int = ...) -> bool:
+        if self.immutable:
+            return False
+
         if index.isValid():
             if role in (QtCore.Qt.EditRole, QtCore.Qt.CheckStateRole, QtCore.Qt.UserRole):
 

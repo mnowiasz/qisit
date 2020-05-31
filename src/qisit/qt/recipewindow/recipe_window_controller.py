@@ -81,6 +81,8 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._session = session
         self._translate = translate
         self.__editable = False
+        # Workaround for saving UI elements (yes, really)
+        self.__immutable = False
         self.__new_recipe = new_recipe
         self.__force_closed = False
 
@@ -612,6 +614,18 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.recipeTitleLineEdit.setReadOnly(not editable)
         self.urlLineEdit.setReadOnly(not editable)
 
+    # This is a workaround for a unexpected problem: When the window has been closed and the UI states are saved,
+    # The Views - at least TreeView - might call setData() - *after* the transaction has been commited/rollbacked
+    # This resulted in a new transaction which would never be closed and caused chaos at the end of the progra
+    @property
+    def immutable(self) -> bool:
+        return self.__immutable
+
+    @immutable.setter
+    def immutable(self, immutable: bool):
+        self.__immutable = immutable
+        self._ingredient_treeview_model.immutable = immutable
+
     @property
     def max_image_size(self) -> (int, int):
         """
@@ -652,6 +666,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
             self._session.delete(self._recipe)
             self._session.commit()
             self.recipeChanged.emit()
+        self.immutable = True
         self._save_ui_states()
         event.accept()
 
