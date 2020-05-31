@@ -708,16 +708,18 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
                     # There's no point in having a empty name - well, in that case we could
                     # display/use the ingredient's generic name, but this might be quite confusing
                     # for the user
-                    if new_name is not None:
-                        old_name = ingredient_list_item.name
+                    if new_name is None:
+                        return False
 
-                        # This means that a change in the group's name will be visible to all
-                        # recipes having this pseudo ingredient. Not exactly sure if it's the
-                        # right thing to to do, on the other hand it's more consistent
-                        if old_name is None and ingredient_list_item.ingredient.is_group:
-                            ingredient_list_item.ingredient.name = new_name
-                        else:
-                            ingredient_list_item.name = new_name
+                    old_name = ingredient_list_item.name
+
+                    # This means that a change in the group's name will be visible to all
+                    # recipes having this pseudo ingredient. Not exactly sure if it's the
+                    # right thing to to do, on the other hand it's more consistent
+                    if old_name is None and ingredient_list_item.ingredient.is_group:
+                        ingredient_list_item.ingredient.name = new_name
+                    else:
+                        ingredient_list_item.name = new_name
 
                 if column == self.IngredientColumns.AMOUNT and role == QtCore.Qt.UserRole:
                     (amount, range_amount), unit_string = value

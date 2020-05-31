@@ -72,9 +72,7 @@ class EditorDelegate(QtWidgets.QStyledItemDelegate):
     def createEditor(self, parent: QtWidgets.QWidget, option: Qt.QStyleOptionViewItem,
                      index: QtCore.QModelIndex) -> QtWidgets.QWidget:
         self.beginEditing.emit()
+        widget = super().createEditor(parent, option, index)
         if self._completer is not None:
-            widget = QtWidgets.QLineEdit(parent)
             widget.setCompleter(self._completer)
-            return widget
-        else:
-            return super().createEditor(parent, option, index)
+        return widget

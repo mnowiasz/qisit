@@ -109,8 +109,11 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.setupUi(self)
 
         self._amount_delegate = AmountDelegate()
-        self._ingredient_completer = IngredientCompleter(self._session)
-        self._ingredient_delegate = EditorDelegate(self._ingredient_completer)
+        self._popup_completer = IngredientCompleter(self._session)
+        self._inline_completer = IngredientCompleter(self._session)
+        self._inline_completer.setCompletionMode(QtWidgets.QCompleter.InlineCompletion)
+
+        self._ingredient_delegate = EditorDelegate(self._inline_completer)
         self._image_description_delegate = EditorDelegate()
         self._text_edits = (self.descriptionPlainTextEdit, self.instructionsPlainTextEdit, self.notesPlainTextEdit)
 
@@ -754,7 +757,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self.alternativeCheckBox.setText(self._ingredient_treeview_model.alternative_or)
         self.newIngredientAmountEditor.unitComboBox.setModel(self._unit_combobox_model)
         self.newIngredientLineEdit.setValidator(self._lstrip_validator)
-        self.newIngredientLineEdit.setCompleter(self._ingredient_completer)
+        self.newIngredientLineEdit.setCompleter(self._popup_completer)
         for checkbox in (self.isGroupCheckBox, self.optionalCheckbox, self.alternativeCheckBox):
             checkbox.clicked.connect(self.addNewIngredientCheckboxes_clicked)
 
@@ -916,7 +919,8 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         self._transaction_started = False
         self._session.refresh(self._recipe)
         self._unit_combobox_model.reload_model()
-        self._ingredient_completer.reload_model()
+        self._inline_completer.reload_model()
+        self._popup_completer.reload_model()
         self.load_data()
         if not self.editable:
             self._load_markdown_textedits()
