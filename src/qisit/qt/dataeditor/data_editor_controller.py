@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
+import math
 import typing
 from enum import IntEnum
 
@@ -76,15 +77,20 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self._settings = QtCore.QSettings()
 
         self._transaction_started = False
+        self._translate = translate
 
         self.setupUi(self)
         self._item_model = data_editor_model.DataEditorModel(self._session)
         self._item_model.changed.connect(self.set_modified)
         self._item_model.changeSelection.connect(self.change_selection)
+        self._item_model.illegalValue.connect(self.illegal_value)
+
         self.dataColumnView.setModel(self._item_model)
 
         self._unit_conversion_model = conversion_table_model.ConversionTableModel(self._session)
         self._unit_conversion_model.changed.connect(self.set_modified)
+        self._unit_conversion_model.illegalValue.connect(self.illegal_value)
+
         self.unitConversionTableView.setModel(self._unit_conversion_model)
 
         self._selected_index = None
@@ -98,7 +104,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.init_ui()
 
     def _get_item_for_stackedwidget(self, selected_index: QtCore.QModelIndex):
-
 
         model = self._item_model
         column = selected_index.internalId()
@@ -366,6 +371,33 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.deleteIconButton.setEnabled(True)
         self.stackedwidget_edited()
 
+    def illegal_value(self, error: misc.ValueError, value: str):
+        """
+        The user has entered an illegal value
+
+        Args:
+            error ():  The error code
+            value ():  the value (if existent)
+
+        Returns:
+
+        """
+
+        _translate = self._translate
+
+        if error == misc.ValueError.ISEMPTY:
+            Qt.QMessageBox.critical(self, _translate("DataEditor", "Empty Value!"),
+                                    _translate("DataEditor", "Empty Value!"))
+        elif error == misc.ValueError.ISNONUMBER:
+            Qt.QMessageBox.critical(self, _translate("DataEditor", "Illegal Value!"),
+                                    _translate("DataEditor", "Illegal value: {}").format(value))
+        elif error == misc.ValueError.ISZERO:
+            Qt.QMessageBox.critical(self, _translate("DataEditor", "Zero Value!"),
+                                    _translate("DataEditor", "Value must not be zero!"))
+        if error == misc.ValueError.ISDUPLICATE:
+            Qt.QMessageBox.critical(self, _translate("DataEditor", "Duplicate Value"),
+                                    _translate("DataEditor", "{} already exists!").format(value))
+
     def load_stackedwidget(self, selected_indexes: typing.List[QtCore.QModelIndex]):
         """
         Switch the stacked widget accordingly and load the data
@@ -491,16 +523,20 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                 # value. Unit Type GROUP isn't visible for the user so don't bother to check
                 if new_type != data.IngredientUnit.UnitType.UNSPECIFIC:
                     if new_factor is None:
-                        new_factor = 1.0
+                        self.illegal_value(misc.ValueError.ISEMPTY, None)
+                        new_factor = the_item.factor
                     else:
                         try:
                             new_factor = parse_decimal(new_factor)
+                            if math.isclose(new_factor, 0.0):
+                                self.illegal_value(misc.ValueError.ISZERO, "0")
+                                new_factor = the_item.factor
+                            if new_factor < 0.0:
+                                self.illegal_value(misc.ValueError.ISNONUMBER, new_factor)
+                                new_factor = the_item.factor
                         except NumberFormatError:
                             # The user has entered something strange.
-                            _translate = translate
-                            error_message = _translate("DataEditor", "Illegal value: {}")
-                            misc.errorMessage.showMessage(error_message.format(new_factor),
-                                                          misc.ErrorValue.illegal_value)
+                            self.illegal_value(misc.ValueError.ISNONUMBER, new_factor)
                             new_factor = the_item.factor
                 else:
                     # Unspecific -> no Factor
@@ -514,7 +550,6 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         elif stackedwidget_index == self.StackedItems.INGREDIENTS:
             the_item.icon = self._ingredient_icon
-
 
         self.okButton.setEnabled(False)
         self.cancelButton.setEnabled(False)

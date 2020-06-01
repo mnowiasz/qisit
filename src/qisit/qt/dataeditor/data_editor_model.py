@@ -27,6 +27,7 @@ from qisit.core.db import data
 from qisit.core.util import nullify
 from qisit.qt import misc
 
+
 class DataEditorModel(QtCore.QAbstractItemModel):
     class RootItems(IntEnum):
         """ Symbolic row names """
@@ -60,6 +61,9 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     """ Tell the view to change it's selection to the index. This is also a workaround for a strange bug:
     When merging two or more items *and* a ingredient unit has been selected the selection becomes odd and
     the first column is duplicated. Odd. """
+
+    illegalValue = QtCore.pyqtSignal(misc.ValueError, str)
+    """ The user entered a duplicate value """
 
     def __init__(self, session: orm.Session):
 
@@ -556,9 +560,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
                     # Currently: #2
 
-                    _translate = translate
-                    error_message = _translate("DataEditor", "There is already an entry named \"{}\"").format(value)
-                    misc.errorMessage.showMessage(error_message, misc.ErrorValue.illegal_value)
+                    self.illegalValue.emit(misc.ValueError.ISDUPLICATE, value)
                     return False
 
         self.changed.emit()
