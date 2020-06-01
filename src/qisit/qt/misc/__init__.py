@@ -16,13 +16,12 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 """ Utility things """
-from PyQt5 import QtWidgets, Qt
+from PyQt5 import QtWidgets, Qt, QtCore
 
 from qisit import translate
 
 errorMessage: QtWidgets.QErrorMessage = None
 image_filter = None
-
 
 class ErrorValue():
     """ Global definition for error values """
@@ -31,9 +30,23 @@ class ErrorValue():
 
 def setup():
     _translate = translate
-    global image_filter, errorMessage
-
+    global image_filter, errorMessage, values
     errorMessage = QtWidgets.QErrorMessage()
     image_filter = _translate("ImageFilter", "Imagefiles ({})").format(" ".join(
         ["*.{}".format(supported_format.data().decode()) for supported_format in
          Qt.QImageReader.supportedImageFormats()]))
+
+    values = Values()
+
+class Values(object):
+    def __init__(self):
+        self.__settings = QtCore.QSettings()
+
+    @property
+    def ingredient_icon_height(self) -> int:
+        """ The height of an (optional) ingredient icon"""
+        return 24
+
+
+values: Values = None
+

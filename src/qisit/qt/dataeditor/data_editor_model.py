@@ -139,7 +139,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     def data(self, index: QtCore.QModelIndex, role: int = ...) -> typing.Any:
         if role not in (
                 QtCore.Qt.DisplayRole, QtCore.Qt.DecorationRole, QtCore.Qt.EditRole, QtCore.Qt.FontRole,
-                QtCore.Qt.UserRole):
+                QtCore.Qt.UserRole, QtCore.Qt.SizeHintRole):
             return QtCore.QVariant(None)
 
         column = index.internalId()
@@ -188,14 +188,17 @@ class DataEditorModel(QtCore.QAbstractItemModel):
                         title = f"{item.unit_string()} ({count})"
                 return QtCore.QVariant(title)
 
-            if role == QtCore.Qt.DecorationRole and self.root_row == self.RootItems.INGREDIENTS:
-                if item.icon is not None:
+            if role == QtCore.Qt.EditRole:
+                return QtCore.QVariant(item.name)
+
+            # Ingredient icon
+            if self.root_row == self.RootItems.INGREDIENTS:
+                if role == QtCore.Qt.SizeHintRole:
+                    return QtCore.QVariant(QtCore.QSize(0, misc.values.ingredient_icon_height))
+                elif role == QtCore.Qt.DisplayRole and item.icon is not None:
                     pixmap = QtGui.QPixmap()
                     if pixmap.loadFromData(item.icon):
                         return QtCore.QVariant(pixmap)
-
-            if role == QtCore.Qt.EditRole:
-                return QtCore.QVariant(item.name)
 
             if self.root_row == self.RootItems.INGREDIENTUNITS:
                 ingredient_unit = item

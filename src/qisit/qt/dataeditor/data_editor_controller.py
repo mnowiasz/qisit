@@ -346,8 +346,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                                     .format(filename, image_reader.errorString()))
             return
 
-        settings = self._settings
-        icon_height = settings.value("preferences/icons/height", 16)
+        icon_height = misc.values.ingredient_icon_height
 
         # 1. Scale the images (if necessary)
         if image.height() > icon_height:
