@@ -636,6 +636,12 @@ class Ui_RecipeWindow(object):
         self.actionAdd_Image_s = QtWidgets.QAction(RecipeWindow)
         self.actionAdd_Image_s.setIcon(icon1)
         self.actionAdd_Image_s.setObjectName("actionAdd_Image_s")
+        self.actionCopy_to_Clipboard = QtWidgets.QAction(RecipeWindow)
+        self.actionCopy_to_Clipboard.setEnabled(False)
+        icon7 = QtGui.QIcon()
+        icon7.addPixmap(QtGui.QPixmap(":/icons/document-copy.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionCopy_to_Clipboard.setIcon(icon7)
+        self.actionCopy_to_Clipboard.setObjectName("actionCopy_to_Clipboard")
         self.menuRecipe.addAction(self.actionEdit)
         self.menuRecipe.addAction(self.actionSave)
         self.menuRecipe.addAction(self.actionRevert)
@@ -722,6 +728,7 @@ class Ui_RecipeWindow(object):
         self.actionDelete_Ingredients.setToolTip(_translate("RecipeWindow", "Delete Ingredient(s)"))
         self.actionDelete_Image_s.setText(_translate("RecipeWindow", "Delete Image(s)"))
         self.actionAdd_Image_s.setText(_translate("RecipeWindow", "Add Image(s)"))
+        self.actionCopy_to_Clipboard.setText(_translate("RecipeWindow", "Copy to Clipboard"))
 from qisit.qt.recipewindow.amounteditor import AmountEditor
 from qisit.qt.recipewindow.draggingtreeview import DraggingTreeView
 from qisit.qt.recipewindow.timeeditor import TimeEditor

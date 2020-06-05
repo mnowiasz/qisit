@@ -556,10 +556,15 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         """
 
+        number_of_selected_indexes = len(self.ingredientTreeView.selectedIndexes())
+
         # Delete Button/action
-        delete_enabled = len(self.ingredientTreeView.selectedIndexes()) > 0 and self.editable
+        delete_enabled = number_of_selected_indexes > 0 and self.editable
         self.deleteIngredientsButton.setEnabled(delete_enabled)
         self.actionDelete_Ingredients.setEnabled(delete_enabled)
+
+        # Copy to clipboard
+        self.actionCopy_to_Clipboard.setEnabled(number_of_selected_indexes > 0)
 
         # New ingredient group
         enabled = not self.amounts_scaled and self.editable
@@ -690,6 +695,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
 
         # -------------------- Actions --------------------
         for action, slot in ((self.actionAdd_Image_s, self.actionAdd_Image_s_triggered),
+                             (self.actionCopy_to_Clipboard, self.actionCopy_to_Clipboard_triggered),
                              (self.actionDelete_Image_s, self.actionDelete_Image_s_triggered),
                              (self.actionDelete_Ingredients, self.actionDelete_Ingredients_triggered),
                              (self.actionEdit, self.actionEdit_toggled),
@@ -751,6 +757,8 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         treeview.setItemDelegateForColumn(treeviewmodel.IngredientColumns.INGREDIENT, self._ingredient_delegate)
         treeview.selectionModel().selectionChanged.connect(self.ingredientTreeView_selectionChanged)
         treeview.addAction(self.actionDelete_Ingredients)
+        treeview.addAction(self.actionCopy_to_Clipboard)
+
         treeview.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
         # New ingredient group
@@ -1076,6 +1084,26 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         else:
             self._recipe.categories.remove(category)
         self._set_category_line_edit()
+
+    def actionCopy_to_Clipboard_triggered(self, checked: bool = False):
+
+        model = self._ingredient_treeview_model
+        output = ""
+        for index in self.ingredientTreeView.selectedIndexes():
+            # Although the amount column is part of the selected indexes, it's easier to ignore all indexes
+            # except the ingredient one
+            if index.column() == model.IngredientColumns.INGREDIENT:
+                position = index.siblingAtColumn(model.IngredientColumns.POSITION).data(QtCore.Qt.DisplayRole)
+                if not data.IngredientListEntry.is_group(position):
+                    amount_string = index.siblingAtColumn(model.IngredientColumns.AMOUNT).data(QtCore.Qt.DisplayRole)
+                    ingredient_string = index.data(QtCore.Qt.DisplayRole)
+                    # TODO: set the format in the preferences
+                    output += f"{amount_string} {ingredient_string} ({self._recipe.title})\n"
+
+        if len(output) > 0:
+            clipboard = QtGui.QGuiApplication.clipboard()
+            clipboard.setText(output)
+
 
     @_Decorators.change
     def actionDelete_Image_s_triggered(self, checked: bool = False):

@@ -1209,6 +1209,18 @@
     <string>Add Image(s)</string>
    </property>
   </action>
+  <action name="actionCopy_to_Clipboard">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/document-copy.png</normaloff>:/icons/document-copy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Copy to Clipboard</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
