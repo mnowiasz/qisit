@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='qisit',
-    version='0.7.0-alpha',
+    version='0.7.0-beta',
     packages = find_packages(include=['qisit','qisit.*']),
     package_data={
         "qisit": ["LICENSE.md"],

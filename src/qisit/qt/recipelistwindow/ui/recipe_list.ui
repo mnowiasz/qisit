@@ -159,13 +159,7 @@
     </property>
     <addaction name="actionSave"/>
     <addaction name="actionRevert"/>
-    <addaction name="actionData_editor"/>
     <addaction name="actionQuit"/>
-   </widget>
-   <widget class="QMenu" name="menuFilter">
-    <property name="title">
-     <string>Filter</string>
-    </property>
    </widget>
    <widget class="QMenu" name="menuRecipe">
     <property name="title">
@@ -181,31 +175,26 @@
     <addaction name="actionDelete_Recipe_s"/>
     <addaction name="menuImport_2"/>
    </widget>
-   <widget class="QMenu" name="menuShow">
-    <property name="title">
-     <string>Show</string>
-    </property>
-   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="actionWhat_s_This"/>
-    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
      <string>Settings</string>
     </property>
+    <addaction name="actionShow_Toolbar"/>
+    <addaction name="separator"/>
     <addaction name="actionFilter"/>
-    <addaction name="actionShow"/>
+    <addaction name="actionShow_Columns"/>
+    <addaction name="separator"/>
+    <addaction name="actionData_editor"/>
    </widget>
    <addaction name="menuQisit"/>
    <addaction name="menuRecipe"/>
    <addaction name="menuSettings"/>
-   <addaction name="menuFilter"/>
-   <addaction name="menuShow"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -319,31 +308,44 @@
     <string>Data editor</string>
    </property>
   </action>
-  <action name="actionWhat_s_This">
-   <property name="icon">
-    <iconset resource="../../resources/resources.qrc">
-     <normaloff>:/icons/information.png</normaloff>:/icons/information.png</iconset>
-   </property>
-   <property name="text">
-    <string>What's This?</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Shift+F1</string>
-   </property>
-  </action>
   <action name="actionFilter">
    <property name="text">
     <string>Filter</string>
    </property>
   </action>
-  <action name="actionShow">
+  <action name="actionShow_Columns">
    <property name="text">
-    <string>Show</string>
+    <string>Show Columns</string>
+   </property>
+  </action>
+  <action name="actionShow_Toolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Toolbar</string>
    </property>
   </action>
  </widget>
  <resources>
   <include location="../../resources/resources.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionShow_Toolbar</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>toolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>422</x>
+     <y>48</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

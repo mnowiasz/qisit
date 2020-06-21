@@ -162,6 +162,8 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.setWindowTitle(f"{self.windowTitle()} [*]")
         self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
 
+        self.menuHelp.addAction(misc.whats_this_action)
+
         self.actionAdd_Ingredient.triggered.connect(self.actionAdd_Ingredient_triggered)
         self.actionDelete.triggered.connect(self.actionDelete_triggered)
         self.actionSave.triggered.connect(self.actionSave_triggered)

@@ -693,6 +693,9 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
                 lambda index, widget=combobox: self.recipe_comboboxes_currentIndexChanged(index, combobox=widget))
             combobox.currentTextChanged.connect(lambda text: self.set_modified())
 
+        # ------------------- Help Menu --------------------
+        self.menuHelp.addAction(misc.whats_this_action)
+
         # -------------------- Actions --------------------
         for action, slot in ((self.actionAdd_Image_s, self.actionAdd_Image_s_triggered),
                              (self.actionCopy_to_Clipboard, self.actionCopy_to_Clipboard_triggered),
@@ -1103,7 +1106,6 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
         if len(output) > 0:
             clipboard = QtGui.QGuiApplication.clipboard()
             clipboard.setText(output)
-
 
     @_Decorators.change
     def actionDelete_Image_s_triggered(self, checked: bool = False):

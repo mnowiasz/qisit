@@ -19,11 +19,12 @@
 
 from enum import IntEnum
 
-from PyQt5 import Qt, QtCore
+from PyQt5 import Qt, QtCore, QtWidgets
 
 from qisit import translate
 
 image_filter = None
+whats_this_action = None
 
 
 class IllegalValueEntered(IntEnum):
@@ -48,6 +49,9 @@ def setup_image_filter():
 
     values = Values()
 
+def setup_global_actions():
+    global whats_this_action
+    whats_this_action = QtWidgets.QWhatsThis.createAction()
 
 class Values(object):
     def __init__(self):

@@ -19,7 +19,7 @@ import signal
 import sys
 
 from PyQt5 import QtCore, QtWidgets
-from sqlalchemy import create_engine, orm
+from sqlalchemy import create_engine
 
 import qisit.core.db as db
 import qisit.core.db.data as data
@@ -40,7 +40,7 @@ def qtmain():
     QtCore.QCoreApplication.setOrganizationDomain("qisit.app")
     QtCore.QCoreApplication.setOrganizationName("qisit")
     QtCore.QCoreApplication.setApplicationName("qisit")
-    QtCore.QCoreApplication.setApplicationVersion("0.7.0-alpha")
+    QtCore.QCoreApplication.setApplicationVersion("0.7.0-beta")
 
     # CTRL-C
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -72,11 +72,12 @@ def qtmain():
     # db.engine = create_engine("postgresql+psycopg2://qisit:qisit@127.0.0.1:54320/qisittest")
 
     app = QtWidgets.QApplication(sys.argv)
-    recipe_list_controller = RecipeListWindow(session)
     misc.setup_image_filter()
-
+    misc.setup_global_actions()
+    recipe_list_controller = RecipeListWindow(session)
     app.exec_()
     session.close()
+
 
 if __name__ == '__main__':
     qtmain()

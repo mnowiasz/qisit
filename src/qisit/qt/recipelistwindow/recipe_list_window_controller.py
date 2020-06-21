@@ -19,12 +19,13 @@
 
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 from sqlalchemy import create_engine, exc, func, orm
-import typing
+
 from qisit import translate
 from qisit.core import db
 from qisit.core.db import data
 from qisit.core.util import nullify
 from qisit.importer import gourmetdb
+from qisit.qt import misc
 from qisit.qt.aboutdialog.aboutdialog_controller import AboutdialogController
 from qisit.qt.dataeditor.data_editor_controller import DataEditorController
 from qisit.qt.recipelistwindow.recipe_table_model import RecipeTableModel
@@ -60,14 +61,14 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         # Setup filter menus
         _translate = self._translate
-        self.menuFilter.clear()
+        # self.menuFilter.clear()
 
         for menu_entry, filter_table in ((_translate("RecipeWindow", "Author"), data.Author),
                                          (_translate("RecipeWindow", "Category"), data.Category),
                                          (_translate("RecipeWindow", "Cuisine"), data.Cuisine)):
             self._filter_menus[filter_table] = QtWidgets.QMenu(title=menu_entry)
             self._filter_menus[filter_table].setEnabled(True)
-            self.menuFilter.addMenu(self._filter_menus[filter_table])
+            self.actionFilter.setMenu(self._filter_menus[filter_table])
 
         self._action_filters = {
             data.Category: self.actionfilterCategories,
@@ -101,6 +102,11 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
             self.restoreGeometry(settings.value("geometry"))
         if settings.contains("state"):
             self.restoreState(settings.value("state"))
+        settings.endGroup()
+
+        settings.beginGroup("RecipeListWindows/toolbar")
+        toolbar_enabled = settings.value("enabled", True, bool)
+        self.actionShow_Toolbar.setChecked(toolbar_enabled)
         settings.endGroup()
 
         settings.beginGroup("RecipeListWindow/RecipeTableView")
@@ -145,6 +151,10 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         settings.setValue("state", self.saveState())
         settings.endGroup()
 
+        settings.beginGroup("RecipeListWindows/toolbar")
+        settings.setValue("enabled", self.actionShow_Toolbar.isChecked())
+        settings.endGroup()
+
         settings.beginGroup("RecipeListWindow/RecipeTableView")
         settings.setValue("main/geometry", self.recipeTableView.saveGeometry())
         settings.setValue("main/recipes_per_page", str(self.table_model.recipes_per_page))
@@ -159,7 +169,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         """
         _translate = self._translate
-        columns_menu = QtWidgets.QMenu(title=_translate("RecipeWindow", "Columns"), parent=self.menuShow)
+        columns_menu = QtWidgets.QMenu()
         for column in self.table_model.RecipeColumns:
             if column == self.table_model.RecipeColumns.ID:
                 # The hidden ID column is always hidden and shouldn't be displayed in a menu
@@ -178,7 +188,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
             columns_menu.addAction(column_action)
 
         columns_menu.setEnabled(True)
-        self.menuShow.addMenu(columns_menu)
+        self.actionShow_Columns.setMenu(columns_menu)
 
     def _setup_combo_list(self):
         """
@@ -302,6 +312,10 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         self.setWindowTitle(f"{self.windowTitle()} [*]")
 
+        # -------------------- Help Menu --------------------
+        self.menuHelp.insertAction(self.actionAbout, misc.whats_this_action)
+        self.menuHelp.insertSeparator(self.actionAbout)
+
         # -------------------- Actions --------------------
         self.actionAbout.triggered.connect(self.actionAbout_triggered)
         self.actionData_editor.triggered.connect(self.actionData_editor_triggered)
@@ -423,7 +437,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         """
 
         if self._data_editor is None:
-            self._data_editor = DataEditorController(session = self._session)
+            self._data_editor = DataEditorController(session=self._session)
             self._data_editor.dataCommited.connect(self.dataeditor_commited)
             self._data_editor.recipeDoubleClicked.connect(self.open_recipe)
 
@@ -639,11 +653,11 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         """
         # TODO: Ask
-        #if self._recipe_windows:
+        # if self._recipe_windows:
         #    for recipe_window in self._recipe_windows.values():
         #        recipe_window.destroyed.disconnect()
         #        recipe_window.close()
-        #if self._data_editor:
+        # if self._data_editor:
         #    self._data_editor.close()
         if self.modified:
             self._session.rollback()
@@ -667,7 +681,6 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         for recipe_window in self._recipe_windows.values():
             recipe_window.revert_data()
-
 
     def firstPageButton_clicked(self):
         """
@@ -798,7 +811,6 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         recipe = self.table_model.recipe_at_row(index.row())
         if recipe:
             self.open_recipe(recipe)
-
 
     def recipeTableView_selectionChanged(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
         """
