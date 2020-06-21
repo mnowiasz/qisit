@@ -371,7 +371,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
         self.deleteIconButton.setEnabled(True)
         self.stackedwidget_edited()
 
-    def illegal_value(self, error: misc.ValueError, value: str):
+    def illegal_value(self, error: misc.IllegalValueEntered, value: str):
         """
         The user has entered an illegal value
 
@@ -385,16 +385,16 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
 
         _translate = self._translate
 
-        if error == misc.ValueError.ISEMPTY:
+        if error == misc.IllegalValueEntered.ISEMPTY:
             Qt.QMessageBox.critical(self, _translate("DataEditor", "Empty Value!"),
                                     _translate("DataEditor", "Empty Value!"))
-        elif error == misc.ValueError.ISNONUMBER:
+        elif error == misc.IllegalValueEntered.ISNONUMBER:
             Qt.QMessageBox.critical(self, _translate("DataEditor", "Illegal Value!"),
                                     _translate("DataEditor", "Illegal value: {}").format(value))
-        elif error == misc.ValueError.ISZERO:
+        elif error == misc.IllegalValueEntered.ISZERO:
             Qt.QMessageBox.critical(self, _translate("DataEditor", "Zero Value!"),
                                     _translate("DataEditor", "Value must not be zero!"))
-        if error == misc.ValueError.ISDUPLICATE:
+        if error == misc.IllegalValueEntered.ISDUPLICATE:
             Qt.QMessageBox.critical(self, _translate("DataEditor", "Duplicate Value"),
                                     _translate("DataEditor", "{} already exists!").format(value))
 
@@ -523,20 +523,20 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                 # value. Unit Type GROUP isn't visible for the user so don't bother to check
                 if new_type != data.IngredientUnit.UnitType.UNSPECIFIC:
                     if new_factor is None:
-                        self.illegal_value(misc.ValueError.ISEMPTY, None)
+                        self.illegal_value(misc.IllegalValueEntered.ISEMPTY, None)
                         new_factor = the_item.factor
                     else:
                         try:
                             new_factor = parse_decimal(new_factor)
                             if math.isclose(new_factor, 0.0):
-                                self.illegal_value(misc.ValueError.ISZERO, "0")
+                                self.illegal_value(misc.IllegalValueEntered.ISZERO, "0")
                                 new_factor = the_item.factor
                             if new_factor < 0.0:
-                                self.illegal_value(misc.ValueError.ISNONUMBER, new_factor)
+                                self.illegal_value(misc.IllegalValueEntered.ISNONUMBER, new_factor)
                                 new_factor = the_item.factor
                         except NumberFormatError:
                             # The user has entered something strange.
-                            self.illegal_value(misc.ValueError.ISNONUMBER, new_factor)
+                            self.illegal_value(misc.IllegalValueEntered.ISNONUMBER, new_factor)
                             new_factor = the_item.factor
                 else:
                     # Unspecific -> no Factor

@@ -32,7 +32,7 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
     changed = QtCore.pyqtSignal()
     """ Emitted when data have been changed """
 
-    illegalValue = QtCore.pyqtSignal(misc.ValueError, str)
+    illegalValue = QtCore.pyqtSignal(misc.IllegalValueEntered, str)
     """ Emitted when the user has entered an illegal value """
 
     def __init__(self, session: orm.Session):
@@ -122,21 +122,21 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
         _translate = translate
 
         if value is None:
-            self.illegalValue.emit(misc.ValueError.ISEMPTY, None)
+            self.illegalValue.emit(misc.IllegalValueEntered.ISEMPTY, None)
             return False
         try:
             value = float(parse_decimal(value))
         except NumberFormatError:
             # The user has entered something strange.
-            self.illegalValue.emit(misc.ValueError.ISNONUMBER, value)
+            self.illegalValue.emit(misc.IllegalValueEntered.ISNONUMBER, value)
             return False
 
         if value == 0:
-            self.illegalValue.emit(misc.ValueError.ISZERO, "0")
+            self.illegalValue.emit(misc.IllegalValueEntered.ISZERO, "0")
             return False
 
         if value < 0.0:
-            self.illegalValue.emit(misc.ValueError.ISNONUMBER, str(value))
+            self.illegalValue.emit(misc.IllegalValueEntered.ISNONUMBER, str(value))
             return False
 
         self.changed.emit()

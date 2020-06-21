@@ -62,7 +62,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
     When merging two or more items *and* a ingredient unit has been selected the selection becomes odd and
     the first column is duplicated. Odd. """
 
-    illegalValue = QtCore.pyqtSignal(misc.ValueError, str)
+    illegalValue = QtCore.pyqtSignal(misc.IllegalValueEntered, str)
     """ The user entered a duplicate value """
 
     def __init__(self, session: orm.Session):
@@ -560,7 +560,7 @@ class DataEditorModel(QtCore.QAbstractItemModel):
 
                     # Currently: #2
 
-                    self.illegalValue.emit(misc.ValueError.ISDUPLICATE, value)
+                    self.illegalValue.emit(misc.IllegalValueEntered.ISDUPLICATE, value)
                     return False
 
         self.changed.emit()

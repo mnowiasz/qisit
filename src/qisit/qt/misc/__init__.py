@@ -26,7 +26,7 @@ from qisit import translate
 image_filter = None
 
 
-class ValueError(IntEnum):
+class IllegalValueEntered(IntEnum):
     """ The user has entered an illegal value """
     ISEMPTY = 0
     """ No value """
