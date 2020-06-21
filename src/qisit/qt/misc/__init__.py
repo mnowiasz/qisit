@@ -38,7 +38,7 @@ class IllegalValueEntered(IntEnum):
     """ Duplicate value """
 
 
-def setup():
+def setup_image_filter():
     _translate = translate
     global image_filter, values
 

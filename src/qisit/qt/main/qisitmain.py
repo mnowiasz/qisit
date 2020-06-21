@@ -73,7 +73,7 @@ def qtmain():
 
     app = QtWidgets.QApplication(sys.argv)
     recipe_list_controller = RecipeListWindow(session)
-    misc.setup()
+    misc.setup_image_filter()
 
     app.exec_()
     session.close()
