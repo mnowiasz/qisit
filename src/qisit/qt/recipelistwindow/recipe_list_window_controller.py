@@ -89,12 +89,10 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
     def _load_ui_states(self):
         """
-        Restores the states of the widgets (splitters, views...)
-
+        Restores the states of the widgets
         Returns:
 
         """
-
         settings = QtCore.QSettings()
 
         settings.beginGroup("RecipeListWindow/window")
@@ -355,9 +353,9 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         # -------------------- TableView --------------------
         self.recipeTableView.horizontalHeader().setSectionsMovable(True)
-        self.recipeTableView.setColumnHidden(self.table_model.RecipeColumns.ID, True)
         self.recipeTableView.setModel(self.table_model)
         self.recipeTableView.setSortingEnabled(True)
+        self.recipeTableView.setColumnHidden(self.table_model.RecipeColumns.ID, True)
 
         self.recipeTableView.doubleClicked.connect(self.recipeTableView_doubleclicked)
         self.recipeTableView.selectionModel().selectionChanged.connect(self.recipeTableView_selectionChanged)
