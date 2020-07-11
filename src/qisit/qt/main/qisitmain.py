@@ -18,15 +18,14 @@
 import signal
 import sys
 
-from PyQt5 import QtCore, QtWidgets
-from sqlalchemy import create_engine
+from PyQt5 import Qt, QtCore, QtWidgets
+from sqlalchemy import create_engine, exc
 
+from qisit import translate
 from qisit.core import db
-from  qisit.core.db import data
+from qisit.core.db import data
 from qisit.core.util import initialize_db, nullify
 from qisit.qt import misc
-from qisit import translate
-
 from qisit.qt.recipelistwindow.recipe_list_window_controller import RecipeListWindow
 
 
@@ -37,7 +36,10 @@ def ask_database() -> (str, bool):
 
     home_directory = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.HomeLocation)
     suggested_filename = QtCore.QDir(home_directory).filePath("qisit.db")
-    filename, filter_  = QtWidgets.QFileDialog.getSaveFileName(None, caption=_translate("StartUp", "Open or create new database"), directory=suggested_filename, options=QtWidgets.QFileDialog.DontConfirmOverwrite)
+    filename, filter_ = QtWidgets.QFileDialog.getSaveFileName(None, caption=_translate("StartUp",
+                                                                                       "Open or create new database"),
+                                                              directory=suggested_filename,
+                                                              options=QtWidgets.QFileDialog.DontConfirmOverwrite)
     database = nullify(filename)
     if database is not None:
         initialize = not QtCore.QFileInfo.exists(filename)
@@ -49,7 +51,7 @@ def qtmain():
     QtCore.QCoreApplication.setOrganizationDomain("qisit.app")
     QtCore.QCoreApplication.setOrganizationName("qisit")
     QtCore.QCoreApplication.setApplicationName("qisit")
-    QtCore.QCoreApplication.setApplicationVersion("0.7.0-beta")
+    QtCore.QCoreApplication.setApplicationVersion("0.7.0")
 
     # CTRL-C
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -60,28 +62,38 @@ def qtmain():
     misc.setup_image_filter()
     misc.setup_global_actions()
     initialize = False
-    if not settings.contains("database"):
-        database, initialize = ask_database()
-        print(f"database = {database}, init = {initialize}")
-        if database is None:
-            exit(0)
+    db_error = False
+    db_open = False
+
+    # Iterate till either the user has canceled opening/creating a db or the database is open
+    while db_open is False:
+        if not settings.contains("database") or db_error is True:
+            database, initialize = ask_database()
+            print(f"database = {database}, init = {initialize}")
+            if database is None:
+                exit(0)
+            else:
+                settings.setValue("database", database)
         else:
-            settings.setValue("database", database)
-    else:
-        database = settings.value("database")
+            database = settings.value("database")
 
-
-    # ToDO: Catch exceptions
-    db.engine = create_engine(database, echo=False)
-    db.Session.configure(bind=db.engine)
-    if db.engine.driver == "psycopg2":
-        db.group_concat = db.postgres_group_concat
-
-    session = db.Session()
-
-    if initialize:
-        initialize_db(session, load_data=True)
-    data.IngredientUnit.update_unit_dict(session)
+        try:
+            db.engine = create_engine(database, echo=False)
+            db.Session.configure(bind=db.engine)
+            if db.engine.driver == "psycopg2":
+                db.group_concat = db.postgres_group_concat
+            session = db.Session()
+            if initialize:
+                initialize_db(session, load_data=True)
+            data.IngredientUnit.update_unit_dict(session)
+            db_open = True
+            db_error = False
+        except exc.DatabaseError as db_exception:
+            _translate = translate
+            Qt.QMessageBox.critical(None, _translate("StartUp", "Database Error!"),
+                                    _translate("Startup", "Error opening {}: {}".format(database, str(db_exception.orig))))
+            db_error = True
+            db_open = False
 
     recipe_list_controller = RecipeListWindow(session)
     app.exec_()
