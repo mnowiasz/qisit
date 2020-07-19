@@ -63,12 +63,16 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         _translate = self._translate
         # self.menuFilter.clear()
 
+        filter_menu = QtWidgets.QMenu()
         for menu_entry, filter_table in ((_translate("RecipeWindow", "Author"), data.Author),
                                          (_translate("RecipeWindow", "Category"), data.Category),
                                          (_translate("RecipeWindow", "Cuisine"), data.Cuisine)):
             self._filter_menus[filter_table] = QtWidgets.QMenu(title=menu_entry)
             self._filter_menus[filter_table].setEnabled(True)
-            self.actionFilter.setMenu(self._filter_menus[filter_table])
+
+            filter_menu.addMenu(self._filter_menus[filter_table])
+
+        self.actionFilter.setMenu(filter_menu)
 
         self._action_filters = {
             data.Category: self.actionfilterCategories,
