@@ -7,7 +7,7 @@ setup(
     package_data={
         "qisit": ["LICENSE.md"],
     },
-    url='',
+    url='https://github.com/mnowiasz/qisit',
     license='GPL 3.0',
     author='Mark Nowiasz',
     author_email='nowiasz+qisit@gmail.com',

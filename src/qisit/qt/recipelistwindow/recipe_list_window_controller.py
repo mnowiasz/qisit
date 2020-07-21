@@ -61,8 +61,6 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
 
         # Setup filter menus
         _translate = self._translate
-        # self.menuFilter.clear()
-
         filter_menu = QtWidgets.QMenu()
         for menu_entry, filter_table in ((_translate("RecipeWindow", "Author"), data.Author),
                                          (_translate("RecipeWindow", "Category"), data.Category),
@@ -138,6 +136,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         self.table_model.update_model()
         self._update_page_slider()
         self._update_page_buttons()
+        self._update_status_bar()
 
     def _save_ui_states(self):
         """
@@ -299,6 +298,33 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
             self.recipesSlider.setMinimum(0)
             self.recipesSlider.setValue(self.table_model.offset)
 
+    def _update_status_bar(self):
+        """
+        Update the status bar to show the current number of recipes displayed
+        Returns:
+
+        """
+
+        _translate = self._translate
+
+        recipes_per_page = self.table_model.recipes_per_page
+        offset = self.table_model.offset
+        number_of_filtered_recipes = self.table_model.number_of_filtered_recipes
+        number_of_total_recipes = self.table_model.total_number_of_recipes
+
+        lower_bound = offset + 1
+        upper_bound = lower_bound + recipes_per_page - 1
+
+        if upper_bound > number_of_filtered_recipes:
+            upper_bound = number_of_filtered_recipes
+
+        status_message = _translate("RecipeWindow", "Displaying {}-{} of {} recipes").format(lower_bound, upper_bound,
+                                                                                             number_of_filtered_recipes)
+
+        if number_of_filtered_recipes < number_of_total_recipes:
+            status_message += _translate("RecipeWindow", " ({} total)").format(number_of_total_recipes)
+        self.statusBar().showMessage(status_message, 0)
+
     @property
     def modified(self) -> bool:
         return self.isWindowModified()
@@ -386,6 +412,7 @@ class RecipeListWindow(recipe_list.Ui_RecipeListWindow, QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(":/logos/qisit_128x128.png"))
         self._load_ui_states()
         self._setup_columns_menu()
+        self._update_status_bar()
         self.show()
 
     def update_filters(self):
