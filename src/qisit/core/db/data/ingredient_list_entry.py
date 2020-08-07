@@ -367,7 +367,7 @@ class IngredientListEntry(db.Base):
             factor: The factor
 
         Returns:
-            the formatted amount string
+            The formatted amount string
         """
 
         # CLDR = international valid units which are translated into the user's local
@@ -382,3 +382,4 @@ class IngredientListEntry(db.Base):
             else:
                 # Some generic units, like "some" where an amount wouldn't make much sense
                 return self.unit.name
+

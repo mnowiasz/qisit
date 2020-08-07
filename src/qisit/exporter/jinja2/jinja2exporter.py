@@ -68,6 +68,24 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
 
         print(template.render(recipes=recipes, selected_fields=exported_fields, fields=filexporter.ExportedFields, time_format = time_format))
 
+    def format_ingredient_entry(self, entry: data.IngredientListEntry):
+        """
+        Formats an ingredient entry
+
+        Args:
+            entry (): The entry
+
+        Returns:
+            A formatted string
+        """
+        if entry.is_group(entry.position):
+            return f"---- {entry.ingredient.name} ----"
+
+        amount_string = entry.amount_string()
+        group = entry.item_group(entry.position)
+        if group != entry.GROUP_GLOBAL * entry.GROUP_FACTOR:
+            return f"- {amount_string} {entry.name}"
+        return f"{amount_string} {entry.name}"
 
 if __name__ == '__main__':
 
@@ -78,7 +96,7 @@ if __name__ == '__main__':
     session = db.Session()
     data.IngredientUnit.update_unit_dict(session)
 
-    recipes = session.query(data.Recipe).limit(2)
+    recipes = session.query(data.Recipe).all()
 
     exp = Jinja2Exporter()
 
@@ -88,6 +106,6 @@ if __name__ == '__main__':
 
     for recipe in recipes:
         for ingredient in recipe.ingredientlist:
-            print(ingredient)
+            print(f"{exp.format_ingredient_entry(ingredient)}")
     #exp.export_recipes(recipes, "/tmp/zeugs.xml", Jinja2Exporter.Exporters.MYCOOKBOOK_XML,
     #                   exp.supported_fields(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))
