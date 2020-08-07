@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='qisit',
-    version='0.7.1',
+    version='0.8.0_alpha',
     packages = find_packages(include=['qisit','qisit.*']),
     package_data={
         "qisit": ["LICENSE.md"],
@@ -21,6 +21,7 @@ setup(
     extras_require={
         'MySQL':  ['mysqlclient'],
         'PostgreSQL': ['psycopg2'],
+        'Export': ['jinja2']
     },
     entry_points={
         'console_scripts':
