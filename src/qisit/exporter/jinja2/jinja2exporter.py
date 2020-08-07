@@ -18,15 +18,14 @@
 
 from enum import Enum, auto
 
+from babel.dates import format_timedelta
+from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine
 
 from qisit import translate
 from qisit.core import db
 from qisit.core.db import data
 from qisit.exporter import filexporter
-from babel.dates import format_timedelta, format_date
-
-from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 class Jinja2Exporter(filexporter.GenericFileExporter):
@@ -46,7 +45,8 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
                                                                   field != filexporter.ExportedFields.IMAGES},
                                   self.Exporters.MYCOOKBOOK_MCB: {field for field in filexporter.ExportedFields}}
 
-        self._jinja2_env = Environment(loader=PackageLoader('qisit.exporter.jinja2', 'templates'), autoescape=select_autoescape(['html', 'xml']))
+        self._jinja2_env = Environment(loader=PackageLoader('qisit.exporter.jinja2', 'templates'),
+                                       autoescape=select_autoescape(['html', 'xml']))
         self._templates = {self.Exporters.MYCOOKBOOK_XML: "mycookbook.xml",
                            self.Exporters.MYCOOKBOOK_MCB: "mycookbook.xml"}
 
@@ -66,7 +66,8 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
         template = self._jinja2_env.get_template(template_file)
         time_format = lambda value: format_timedelta(value, threshold=2, format="narrow")
 
-        print(template.render(recipes=recipes, selected_fields=exported_fields, fields=filexporter.ExportedFields, time_format = time_format))
+        print(template.render(recipes=recipes, selected_fields=exported_fields, fields=filexporter.ExportedFields,
+                              time_format=time_format, ingredient_formatter=self.format_ingredient_entry))
 
     def format_ingredient_entry(self, entry: data.IngredientListEntry):
         """
@@ -78,17 +79,34 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
         Returns:
             A formatted string
         """
+
+        # TODO: translate/comment
         if entry.is_group(entry.position):
             return f"---- {entry.ingredient.name} ----"
 
+        level = 0
+        alternative_string = ""
+        optional_string = ""
         amount_string = entry.amount_string()
         group = entry.item_group(entry.position)
+        if entry.optional:
+            optional_string = " (optional)"
+
         if group != entry.GROUP_GLOBAL * entry.GROUP_FACTOR:
-            return f"- {amount_string} {entry.name}"
-        return f"{amount_string} {entry.name}"
+            level = 1
+        if entry.is_alternative(entry.position):
+            level += 1
+            alternative_string = "or "
+        elif entry.is_alternative_grouped(entry.position):
+            level += 2
+            alternative_string = "and "
+        level_string = "--" * level
+        if level > 0:
+            level_string += " "
+        return f"{level_string}{alternative_string}{amount_string} {entry.name}{optional_string}"
+
 
 if __name__ == '__main__':
-
     database = f"sqlite:////home/mark/qisit-test.db"
     db.engine = create_engine(database, echo=False)
     db.Session.configure(bind=db.engine)
@@ -104,8 +122,5 @@ if __name__ == '__main__':
     print(exp.supported_fields(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))
     print(exp.available_exporters)
 
-    for recipe in recipes:
-        for ingredient in recipe.ingredientlist:
-            print(f"{exp.format_ingredient_entry(ingredient)}")
-    #exp.export_recipes(recipes, "/tmp/zeugs.xml", Jinja2Exporter.Exporters.MYCOOKBOOK_XML,
-    #                   exp.supported_fields(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))
+    exp.export_recipes(recipes, "/tmp/zeugs.xml", Jinja2Exporter.Exporters.MYCOOKBOOK_XML,
+                       exp.supported_fields(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))

@@ -35,6 +35,28 @@
             %}{{ time_format(recipe.total_time) }}{% endif %}</totaltime>
         <description>{% if fields.DESCRIPTION in selected_fields and recipe.description
             %}{{ text2li(recipe.description) }}{% endif %}</description>
+        <ingredient>{% if fields.INGREDIENTS in selected_fields %}
+            {% for ingredient_entry in recipe.ingredientlist %}<li>{{ ingredient_formatter(ingredient_entry) }}</li>
+            {% endfor %}{% endif %}</ingredient>
+        <recipetext>{% if fields.INSTRUCTIONS in selected_fields and recipe.instructions
+            %}{{ text2li(recipe.instructions) }}{% endif %}</recipetext>
+        <url>{% if fields.URL in selected_fields and recipe.url
+            %}{{ recipe.url }}{% endif %}</url>
+        <imagepath></imagepath>
+        <imageurl></imageurl>
+        <quantity>{% if fields.YIELDS in selected_fields and recipe.yields
+            %}{{ recipe.yields }} {{ recipe.yield_unit_name }}{% endif %}</quantity>
+        <comments>{% if fields.NOTES in selected_fields and recipe.notes
+            %}{{ text2li(recipe.notes) }}{% endif %}</comments>
+        <nutrition></nutrition>
+        <lang></lang>
+        <rating>{% if fields.RATING in selected_fields and recipe.rating
+            %}{{ recipe.rating // 2 }}{% else %}{{ 0 }}{% endif %}</rating>
+        <source>{% if fields.AUTHOR in selected_fields and recipe.author
+            %}{{ recipe.author }}{% endif %}</source>
+        <video></video>{% if fields.CATEGORIES in selected_fields %}
+        {% for category in recipe.categories %}<category>{{ category }}</category>
+        {% endfor %}{% endif %}<tag> h  </tag>
     </recipe>
     {% endfor %}
 
