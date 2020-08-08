@@ -1,42 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-  ~ Copyright (c) 2020 by Mark Nowiasz
-  ~
-  ~ This file is part of Qisit (https://github.com/mnowiasz/qisit)
-  ~
-  ~ Qisit is free software: you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License as published by
-  ~ the Free Software Foundation, either version 3 of the License, or
-  ~ (at your option) any later version.
-  ~
-  ~ Qisit is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ~ GNU General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU General Public License
-  ~  along with qisit.  If not, see <https://www.gnu.org/licenses/>.
-  -->
-
 {% macro text2li(text) -%}
-    {% for line in text.split('\n') %}<li>{{ line }}</li>
-    {% endfor %}
-{%- endmacro %}
-
-<cookbook version="66">
+{% for line in text.split('\n') %}<li>{{ line }}</li>
+{% endfor %}
+{%- endmacro %}<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cookbook>
+<cookbook>
     {% for recipe in recipes %}
     <recipe>
         <title>{{ recipe.title }}</title>
         <preptime>{% if fields.PREPARATION_TIME in selected_fields and recipe.preparation_time
-            %}{{ time_format(recipe.preparation_time) }}{% endif %}</preptime>
+            %}{{ formatter.time_delta(recipe.preparation_time) }}{% endif %}</preptime>
         <cooktime>{% if fields.COOKING_TIME in selected_fields and recipe.cooking_time
-            %}{{ time_format(recipe.cooking_time) }}{% endif %}</cooktime>
+            %}{{ formatter.time_delta(recipe.cooking_time) }}{% endif %}</cooktime>
         <totaltime>{% if fields.TOTAL_TIME in selected_fields and recipe.total_time
-            %}{{ time_format(recipe.total_time) }}{% endif %}</totaltime>
+            %}{{ formatter.time_delta(recipe.total_time) }}{% endif %}</totaltime>
         <description>{% if fields.DESCRIPTION in selected_fields and recipe.description
             %}{{ text2li(recipe.description) }}{% endif %}</description>
         <ingredient>{% if fields.INGREDIENTS in selected_fields %}
-            {% for ingredient_entry in recipe.ingredientlist %}<li>{{ ingredient_formatter(ingredient_entry) }}</li>
+            {% for ingredient_entry in recipe.ingredientlist %}<li>{{ formatter.ingredient_entry(ingredient_entry) }}</li>
             {% endfor %}{% endif %}</ingredient>
         <recipetext>{% if fields.INSTRUCTIONS in selected_fields and recipe.instructions
             %}{{ text2li(recipe.instructions) }}{% endif %}</recipetext>
@@ -46,7 +26,11 @@
         <imageurl></imageurl>
         <quantity>{% if fields.YIELDS in selected_fields and recipe.yields
             %}{{ recipe.yields }} {{ recipe.yield_unit_name }}{% endif %}</quantity>
-        <comments>{% if fields.NOTES in selected_fields and recipe.notes
+        <comments>{% if fields.LAST_COOKED in selected_fields and recipe.last_cooked
+            %}<li>{{ formatter.last_cooked(recipe.last_cooked) }}</li>{% endif %}
+            {% if fields.LAST_MODIFIED in selected_fields and recipe.last_modified
+            %}<li>{{ formatter.last_modified(recipe.last_modified) }}</li>{% endif %}
+            {% if fields.NOTES in selected_fields and recipe.notes
             %}{{ text2li(recipe.notes) }}{% endif %}</comments>
         <nutrition></nutrition>
         <lang></lang>
@@ -56,8 +40,6 @@
             %}{{ recipe.author }}{% endif %}</source>
         <video></video>{% if fields.CATEGORIES in selected_fields %}
         {% for category in recipe.categories %}<category>{{ category }}</category>
-        {% endfor %}{% endif %}<tag> h  </tag>
+        {% endfor %}{% endif %}<tag></tag>
     </recipe>
-    {% endfor %}
-
-</cookbook>
+    {% endfor %}</cookbook>
