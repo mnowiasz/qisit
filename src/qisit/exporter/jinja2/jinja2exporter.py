@@ -18,7 +18,6 @@
 
 from enum import Enum, auto
 
-from babel.dates import format_timedelta, format_date
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine
 
@@ -32,70 +31,6 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
     class Exporters(Enum):
         MYCOOKBOOK_XML = auto()
         MYCOOKBOOK_MCB = auto()
-
-    # Used by the jinja Template to format certain fields
-    class Formatter(object):
-        def ingredient_entry(self, entry: data.IngredientListEntry):
-            """
-            Formats an ingredient entry
-
-            Args:
-                entry (): The entry
-
-            Returns:
-                A formatted string
-            """
-
-            # TODO: translate/comment
-            if entry.is_group(entry.position):
-                return f"---- {entry.ingredient.name} ----"
-
-            level = 0
-            alternative_string = ""
-            optional_string = ""
-            amount_string = entry.amount_string()
-            group = entry.item_group(entry.position)
-            if entry.optional:
-                optional_string = " (optional)"
-
-            if group != entry.GROUP_GLOBAL * entry.GROUP_FACTOR:
-                level = 1
-            if entry.is_alternative(entry.position):
-                level += 1
-                alternative_string = "or "
-            elif entry.is_alternative_grouped(entry.position):
-                level += 2
-                alternative_string = "and "
-            level_string = "--" * level
-            if level > 0:
-                level_string += " "
-            return f"{level_string}{alternative_string}{amount_string} {entry.name}{optional_string}"
-
-        def time_delta(self, value: int):
-            """
-            Formats a time delta (preparation time, ...) in the user's locale
-            Args:
-                value (): Time delta value
-
-            Returns:
-                Formatted string
-
-            """
-            return format_timedelta(value, threshold=2, format="narrow")
-
-        def _format_time(self, prefix: str, value) -> str:
-
-            return f"{prefix} {format_date(value, format='short')}"
-
-        def last_cooked(self, value) -> str:
-            # TODO: Translate
-            return self._format_time("Last cooked:", value)
-
-        def last_modified(self, value) -> str:
-            # TODO: Translate
-            return self._format_time("Last modified:", value)
-
-
 
     def __init__(self):
         _translate = translate
@@ -128,13 +63,12 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
         template_file = self._templates[exporter]
 
         template = self._jinja2_env.get_template(template_file)
-        formatter = self.Formatter()
+        formatter = filexporter.Formatter()
 
         with open(filename, 'w') as file:
-            file.write(template.render(recipes=recipes, selected_fields=exported_fields, fields=filexporter.ExportedFields,
-                              formatter=formatter))
-
-
+            file.write(
+                template.render(recipes=recipes, selected_fields=exported_fields, fields=filexporter.ExportedFields,
+                                formatter=formatter))
 
 
 if __name__ == '__main__':
