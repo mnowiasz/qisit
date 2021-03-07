@@ -18,6 +18,8 @@
 from enum import IntEnum
 
 import sqlalchemy as sql
+import locale
+
 from babel.units import get_unit_name, UnknownUnitError
 from sqlalchemy import orm
 from sqlalchemy.dialects import mysql
@@ -135,7 +137,8 @@ class IngredientUnit(db.Base):
                 # CLDR. Select the units from the current locale
                 for length in ("short", "long"):
                     try:
-                        unit_name = get_unit_name(ingredient_unit.name, length=length)
+                        unit_name = get_unit_name(ingredient_unit.name, length=length,
+                                                  locale=locale.getdefaultlocale()[0])
                         cls.unit_dict[unit_name] = ingredient_unit
                     except UnknownUnitError:
                         # This should not happen...
