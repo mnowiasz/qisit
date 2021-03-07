@@ -20,7 +20,7 @@ from babel.numbers import format_decimal
 from babel.units import format_unit
 from sqlalchemy import orm
 
-from qisit.core import db
+from qisit.core import db, default_locale
 from .ingredient import Ingredient
 from .ingredient_unit import IngredientUnit
 from .recipe import Recipe
@@ -141,9 +141,9 @@ class IngredientListEntry(db.Base):
             return ""
 
         if range_amount is None:
-            return format_decimal(amount * factor)
+            return format_decimal(amount * factor, locale=default_locale)
         else:
-            return f"{format_decimal(amount * factor)} - {format_decimal(range_amount * factor)}"
+            return f"{format_decimal(amount * factor)} - {format_decimal(range_amount * factor, locale=default_locale)}"
 
     @classmethod
     def get_position_for_ingredient(cls, session_: sql.orm.session, recipe: Recipe, parent=None) -> int:
@@ -373,9 +373,10 @@ class IngredientListEntry(db.Base):
         # CLDR = international valid units which are translated into the user's local
         if self.unit.cldr:
             if self.amount and self.range_amount is None:
-                return format_unit(self.amount * factor, self.unit.name)
+                return format_unit(self.amount * factor, self.unit.name, locale=default_locale)
             else:
-                return format_unit(self.format_amount_string(self.amount, self.range_amount, factor), self.unit.name)
+                return format_unit(self.format_amount_string(self.amount, self.range_amount, factor), self.unit.name,
+                                   locale=default_locale)
         else:
             if self.amount:
                 return f"{self.format_amount_string(self.amount, self.range_amount, factor)} {self.unit.name}"

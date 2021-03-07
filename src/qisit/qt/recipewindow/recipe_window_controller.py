@@ -23,6 +23,7 @@ from babel.dates import format_timedelta
 from sqlalchemy import func, orm
 
 from qisit import translate
+from qisit.core import default_locale
 from qisit.core.db import data
 from qisit.core.util import nullify, zero_to_none
 from qisit.qt import misc
@@ -367,7 +368,7 @@ class RecipeWindow(recipe.Ui_RecipeWindow, QtWidgets.QMainWindow):
             timestring = None
 
             if timevalue > 0:
-                timestring = format_timedelta(timevalue, threshold=2)
+                timestring = format_timedelta(timevalue, threshold=2, locale=default_locale)
 
             timelineedit.setText(timestring)
 

@@ -16,3 +16,6 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 """ Qisit's core package, i.e. functionality that's UI agnostic like tools, databases, settings"""
+import locale
+
+default_locale = locale.getdefaultlocale()[0]

@@ -19,6 +19,7 @@
 
 from PyQt5 import QtWidgets, Qt
 from babel.units import get_unit_name
+from qisit.core import default_locale
 
 from qisit.qt.recipewindow.ui import time_editor
 
@@ -81,9 +82,9 @@ class TimeEditor(QtWidgets.QWidget, time_editor.Ui_timeEditor):
             spinbox.clear()
 
     def init_ui(self):
-        self.daysSpinBox.setSuffix(f" {get_unit_name('duration-day', 'short')}")
-        self.hoursSpinBox.setSuffix(f" {get_unit_name('duration-hour', 'short')}")
-        self.minutesSpinBox.setSuffix(f" {get_unit_name('duration-minute', 'short')}")
+        self.daysSpinBox.setSuffix(f" {get_unit_name('duration-day', 'short', locale=default_locale)}")
+        self.hoursSpinBox.setSuffix(f" {get_unit_name('duration-hour', 'short', locale=default_locale)}")
+        self.minutesSpinBox.setSuffix(f" {get_unit_name('duration-minute', 'short', locale=default_locale)}")
 
     def clearButton_clicked(self):
         self.clear_values()

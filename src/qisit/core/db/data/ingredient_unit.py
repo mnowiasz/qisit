@@ -18,13 +18,12 @@
 from enum import IntEnum
 
 import sqlalchemy as sql
-import locale
 
 from babel.units import get_unit_name, UnknownUnitError
 from sqlalchemy import orm
 from sqlalchemy.dialects import mysql
 
-from qisit.core import db
+from qisit.core import db, default_locale
 
 
 # "AmountUnit" probably would have been a better name, but there's no sense in renaming the class/table, issueing
@@ -137,8 +136,7 @@ class IngredientUnit(db.Base):
                 # CLDR. Select the units from the current locale
                 for length in ("short", "long"):
                     try:
-                        unit_name = get_unit_name(ingredient_unit.name, length=length,
-                                                  locale=locale.getdefaultlocale()[0])
+                        unit_name = get_unit_name(ingredient_unit.name, length=length, locale=default_locale)
                         cls.unit_dict[unit_name] = ingredient_unit
                     except UnknownUnitError:
                         # This should not happen...
@@ -209,6 +207,6 @@ class IngredientUnit(db.Base):
         """
 
         if self.cldr:
-            return get_unit_name(self.name)
+            return get_unit_name(self.name, locale=default_locale)
         else:
             return self.name

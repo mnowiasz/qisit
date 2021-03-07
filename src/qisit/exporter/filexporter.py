@@ -21,6 +21,7 @@ from enum import Enum, unique, auto
 from babel.dates import format_timedelta, format_date
 
 from qisit import translate
+from qisit.core import default_locale
 from qisit.core.db import data
 
 
@@ -166,7 +167,7 @@ class Formatter(object):
         Returns:
             Formatted string
         """
-        return format_timedelta(value, threshold=2, format="narrow")
+        return format_timedelta(value, threshold=2, format="narrow", locale=default_locale)
 
     def _format_time(self, prefix: str, value) -> str:
         """
@@ -181,7 +182,7 @@ class Formatter(object):
             Formatted string
         """
 
-        return f"{prefix} {format_date(value, format='short')}"
+        return f"{prefix} {format_date(value, format='short', locale=default_locale)}"
 
     def last_cooked(self, value) -> str:
         _translate = self._translate
