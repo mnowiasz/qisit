@@ -20,8 +20,10 @@ from enum import Enum, auto
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sqlalchemy import create_engine
+from PyQt5 import Qt, QtCore, QtWidgets
 
 from qisit import translate
+from qisit.core import default_locale
 from qisit.core import db
 from qisit.core.db import data
 from qisit.exporter import filexporter
@@ -65,14 +67,20 @@ class Jinja2Exporter(filexporter.GenericFileExporter):
         template = self._jinja2_env.get_template(template_file)
         formatter = filexporter.Formatter()
 
-        with open(filename, 'w') as file:
+        with open(filename, 'w', encoding='utf8') as file:
             file.write(
                 template.render(recipes=recipes, selected_fields=exported_fields, fields=filexporter.ExportedFields,
                                 formatter=formatter))
 
 
 if __name__ == '__main__':
-    database = f"sqlite:////home/mark/qisit.db"
+    QtCore.QCoreApplication.setOrganizationDomain("qisit.app")
+    QtCore.QCoreApplication.setOrganizationName("qisit")
+    QtCore.QCoreApplication.setApplicationName("qisit")
+    QtCore.QCoreApplication.setApplicationVersion("0.8.0_alpha")
+    settings = QtCore.QSettings()
+
+    database = settings.value("database")
     db.engine = create_engine(database, echo=False)
     db.Session.configure(bind=db.engine)
 
@@ -86,6 +94,8 @@ if __name__ == '__main__':
     print(exp.file_suffix(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))
     print(exp.supported_fields(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))
     print(exp.available_exporters)
+    home_directory = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.HomeLocation)
+    suggested_filename = QtCore.QDir(home_directory).filePath("zeugs.xml")
 
-    exp.export_recipes(recipes, "/tmp/zeugs.xml", Jinja2Exporter.Exporters.MYCOOKBOOK_XML,
+    exp.export_recipes(recipes, suggested_filename, Jinja2Exporter.Exporters.MYCOOKBOOK_XML,
                        exp.supported_fields(Jinja2Exporter.Exporters.MYCOOKBOOK_XML))

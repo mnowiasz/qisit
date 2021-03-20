@@ -124,7 +124,7 @@ class IngredientListEntry(db.Base):
     """ Maxmimum number of entries per level """
 
     @classmethod
-    def format_amount_string(cls, amount: float, range_amount: float, factor=1.0) -> str:
+    def format_amount_string(cls, amount: float, range_amount: float, factor=1.0, locale=default_locale) -> str:
         """
         Convenience method for formatting amounts/range amounts
 
@@ -141,9 +141,9 @@ class IngredientListEntry(db.Base):
             return ""
 
         if range_amount is None:
-            return format_decimal(amount * factor, locale=default_locale)
+            return format_decimal(amount * factor, locale=locale)
         else:
-            return f"{format_decimal(amount * factor)} - {format_decimal(range_amount * factor, locale=default_locale)}"
+            return f"{format_decimal(amount * factor, locale=locale)} - {format_decimal(range_amount * factor, locale=locale)}"
 
     @classmethod
     def get_position_for_ingredient(cls, session_: sql.orm.session, recipe: Recipe, parent=None) -> int:

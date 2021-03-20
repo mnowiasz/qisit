@@ -16,10 +16,11 @@
 #   along with qisit.  If not, see <https://www.gnu.org/licenses/>.
 
 from PyQt5 import QtWidgets
-from babel.numbers import parse_decimal, LC_NUMERIC
+from babel.numbers import parse_decimal
 
 from qisit.core.db import data
 from qisit.core.util import nullify
+from qisit.core import default_locale
 from qisit.qt.misc.lstrip_validator import LStripValidator
 from qisit.qt.recipewindow.ui import amount_editor
 
@@ -31,7 +32,7 @@ class AmountEditor(QtWidgets.QWidget, amount_editor.Ui_amountEditor):
     """
 
     @classmethod
-    def parse_amount(cls, amount: str, locale=LC_NUMERIC):
+    def parse_amount(cls, amount: str, locale=default_locale):
         """
         Parses an amount string
 
