@@ -151,7 +151,7 @@ class Formatter(object):
         # A grouped alternative ("and"). Two levels below the standard ingredient
         elif entry.is_alternative_grouped(entry.position):
             level += 2
-            alternative_string = f' {_translate("Exporter", "amd")} '
+            alternative_string = f' {_translate("Exporter", "and")} '
 
         level_string = "--" * level
         if level > 0:
