@@ -24,6 +24,5 @@ It's not really production ready, although I'm using it productively. Look at
 [Install](docs/Installation.md) for instructions
 
 ### Current status
-The differences between Gourmet and Qisit are [here](docs/Gourmet.md). So's the [ToDo](docs/Todo.md) list.
-### Matrix channel
-There's a Matrix channel for Qisit: [#qisit:netzgemeinde.eu](https://matrix.to/#/!RDunwVXvbXGkIFvgoC:netzgemeinde.eu?via=netzgemeinde.eu)
+- The differences between Gourmet and Qisit are [here](docs/Gourmet.md). So's the [ToDo](docs/Todo.md) list.
+- It has been tested on Linux, Windows and Mac OS X

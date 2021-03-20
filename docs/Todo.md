@@ -1,5 +1,5 @@
 ## Missing features
-* There's no import/export/print feature (apart from importing Gourmet's db, that is). This is the second highest
+* There's no import/export/print feature (apart from importing Gourmet's db, that is). This is the highest
 priority
 * You cannot choose which database system (SQlite, MySQL, PostgreSQL) you want - currently it's sqlite and a database
 named "qisit.db" will be created in your home directory. Will be fixed soon
