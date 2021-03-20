@@ -26,6 +26,7 @@ from sqlalchemy import orm
 from qisit import translate
 from qisit.core.db import data
 from qisit.core.util import nullify
+from qisit.core import default_locale
 from qisit.qt import misc
 from qisit.qt.dataeditor import data_editor_model, conversion_table_model, recipe_list_model
 from qisit.qt.dataeditor.ui import data_editor
@@ -460,7 +461,7 @@ class DataEditorController(data_editor.Ui_dataEditor, Qt.QMainWindow):
                     self.stackedWidget.setCurrentIndex(self.StackedItems.INGREDIENT_UNIT)
                     self.typeComboBox.setCurrentIndex(the_item.type_)
                     if the_item.factor is not None:
-                        self.factorLineEdit.setText(format_decimal(the_item.factor))
+                        self.factorLineEdit.setText(format_decimal(the_item.factor, locale=default_locale))
                         self.baseUnitLabel.setText(data.IngredientUnit.base_units[the_item.type_].unit_string())
                     else:
                         self.factorLineEdit.clear()

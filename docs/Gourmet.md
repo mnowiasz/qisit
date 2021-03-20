@@ -52,10 +52,10 @@ This is one of the few cases where Gourmet's data is discarded
 not supported any more by the FDA. So there's no point in importing them - as soon as the nutrional feature is 
 implemented those old data would be completely useless and you've have to edit the mappings ingredient <-> FDA data
 again anyway. 
-* Shopping list.. I'm not sure if it's really a feature people use. Consider this: People have already shopping list
+* Shopping list. I'm not sure if it's really a feature people use. Consider this: People have already shopping list
 programms (possibly connected to their smart speakers) so I'm not sure if a separate, disconnected shopping list would 
-really make sense. Maybe using - if available, that is - API calls to (for example) Google Keep would make more sense 
-but I'm open to suggestions
+really make sense. There's a - in my opinion - better way to handle this in Qisit: You can copy recipe's ingredients 
+(or only select few) into the clipboard and paste them to whatever shopping/note application you are using. 
 * Undo/Redo has been replaced by a generic "revert/save"-Feature. A complete undo/redo implementation would be 
 **much** more work. The additional usefulness compared to revert/save would be only marginal. On the other hand, the
 revert/save feature works also on a global level: Before saving you can always revert the whole database

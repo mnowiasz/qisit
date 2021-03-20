@@ -23,6 +23,7 @@ from babel.units import format_unit
 from sqlalchemy import orm
 
 from qisit import translate
+from qisit.core import default_locale
 from qisit.core.db import data
 from qisit.core.util import nullify
 from qisit.qt import misc
@@ -90,8 +91,9 @@ class ConversionTableModel(QtCore.QAbstractTableModel):
                 value = unit_vertical.factor / unit_horizontal.factor
             if value is not None:
                 if unit_horizontal.cldr and role == QtCore.Qt.DisplayRole:
-                    return QtCore.QVariant(format_unit(value, unit_horizontal.name, length="short"))
-                return QtCore.QVariant(format_decimal(value))
+                    return QtCore.QVariant(format_unit(value, unit_horizontal.name, length="short",
+                                                       locale=default_locale))
+                return QtCore.QVariant(format_decimal(value, locale=default_locale))
 
         if role == QtCore.Qt.FontRole:
             if index_row == index_column:

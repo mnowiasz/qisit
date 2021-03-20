@@ -26,7 +26,7 @@ from babel.numbers import format_decimal
 from sqlalchemy import func, orm
 
 from qisit import translate
-from qisit.core import db
+from qisit.core import db, default_locale
 from qisit.core.db import data
 
 
@@ -254,9 +254,9 @@ class RecipeTableModel(QtCore.QAbstractTableModel):
             yield_string = None
             if yields > 0:
                 if yield_unit_name:
-                    yield_string = f"{format_decimal(yields)} {yield_unit_name}"
+                    yield_string = f"{format_decimal(yields, locale=default_locale)} {yield_unit_name}"
                 else:
-                    yield_string = format_decimal(yields)
+                    yield_string = format_decimal(yields, locale=default_locale)
             return QtCore.QVariant(yield_string)
 
         if column == self.RecipeColumns.RATING:
@@ -276,7 +276,7 @@ class RecipeTableModel(QtCore.QAbstractTableModel):
                 value = recipe.total_time
 
             if value:
-                return QtCore.QVariant(format_timedelta(value, threshold=2, format="narrow"))
+                return QtCore.QVariant(format_timedelta(value, threshold=2, format="narrow", locale=default_locale))
             else:
                 return None
 
@@ -287,7 +287,7 @@ class RecipeTableModel(QtCore.QAbstractTableModel):
             elif column == self.RecipeColumns.LAST_MODIFIED:
                 value = recipe.last_modified
             if value:
-                return QtCore.QVariant(format_date(value, format="short"))
+                return QtCore.QVariant(format_date(value, format="short", locale=default_locale))
             else:
                 return None
 

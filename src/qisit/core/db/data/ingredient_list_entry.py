@@ -20,7 +20,7 @@ from babel.numbers import format_decimal
 from babel.units import format_unit
 from sqlalchemy import orm
 
-from qisit.core import db
+from qisit.core import db, default_locale
 from .ingredient import Ingredient
 from .ingredient_unit import IngredientUnit
 from .recipe import Recipe
@@ -124,7 +124,7 @@ class IngredientListEntry(db.Base):
     """ Maxmimum number of entries per level """
 
     @classmethod
-    def format_amount_string(cls, amount: float, range_amount: float, factor=1.0) -> str:
+    def format_amount_string(cls, amount: float, range_amount: float, factor=1.0, locale=default_locale) -> str:
         """
         Convenience method for formatting amounts/range amounts
 
@@ -141,9 +141,9 @@ class IngredientListEntry(db.Base):
             return ""
 
         if range_amount is None:
-            return format_decimal(amount * factor)
+            return format_decimal(amount * factor, locale=locale)
         else:
-            return f"{format_decimal(amount * factor)} - {format_decimal(range_amount * factor)}"
+            return f"{format_decimal(amount * factor, locale=locale)} - {format_decimal(range_amount * factor, locale=locale)}"
 
     @classmethod
     def get_position_for_ingredient(cls, session_: sql.orm.session, recipe: Recipe, parent=None) -> int:
@@ -367,18 +367,20 @@ class IngredientListEntry(db.Base):
             factor: The factor
 
         Returns:
-            the formatted amount string
+            The formatted amount string
         """
 
         # CLDR = international valid units which are translated into the user's local
         if self.unit.cldr:
             if self.amount and self.range_amount is None:
-                return format_unit(self.amount * factor, self.unit.name)
+                return format_unit(self.amount * factor, self.unit.name, locale=default_locale)
             else:
-                return format_unit(self.format_amount_string(self.amount, self.range_amount, factor), self.unit.name)
+                return format_unit(self.format_amount_string(self.amount, self.range_amount, factor), self.unit.name,
+                                   locale=default_locale)
         else:
             if self.amount:
                 return f"{self.format_amount_string(self.amount, self.range_amount, factor)} {self.unit.name}"
             else:
                 # Some generic units, like "some" where an amount wouldn't make much sense
                 return self.unit.name
+

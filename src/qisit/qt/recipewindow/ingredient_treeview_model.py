@@ -725,7 +725,13 @@ class IngredientTreeViewModel(QtGui.QStandardItemModel):
                     (amount, range_amount), unit_string = value
                     ingredient_list_item.amount = amount
                     ingredient_list_item.range_amount = range_amount
-                    ingredient_list_item.unit = data.IngredientUnit.unit_dict[unit_string]
+
+                    # Special case: Unit Group Name. This isn't in the unit_dict, because if it was it would be
+                    # visible and selectable in the comboboxes
+                    if unit_string == data.IngredientUnit.unit_group.name:
+                        ingredient_list_item.unit = data.IngredientUnit.unit_group
+                    else:
+                        ingredient_list_item.unit = data.IngredientUnit.unit_dict[unit_string]
 
                     self.setData(index, QtCore.QVariant(ingredient_list_item.amount_string()), QtCore.Qt.DisplayRole)
 

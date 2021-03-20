@@ -1,0 +1,45 @@
+{% macro text2li(text) -%}
+{% for line in text.split('\n') %}<li>{{ line }}</li>
+{% endfor %}
+{%- endmacro %}<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cookbook>
+<cookbook>
+    {% for recipe in recipes %}
+    <recipe>
+        <title>{{ recipe.title }}</title>
+        <preptime>{% if fields.PREPARATION_TIME in selected_fields and recipe.preparation_time
+            %}{{ formatter.time_delta(recipe.preparation_time) }}{% endif %}</preptime>
+        <cooktime>{% if fields.COOKING_TIME in selected_fields and recipe.cooking_time
+            %}{{ formatter.time_delta(recipe.cooking_time) }}{% endif %}</cooktime>
+        <totaltime>{% if fields.TOTAL_TIME in selected_fields and recipe.total_time
+            %}{{ formatter.time_delta(recipe.total_time) }}{% endif %}</totaltime>
+        <description>{% if fields.DESCRIPTION in selected_fields and recipe.description
+            %}{{ text2li(recipe.description) }}{% endif %}</description>
+        <ingredient>{% if fields.INGREDIENTS in selected_fields %}
+            {% for ingredient_entry in recipe.ingredientlist %}<li>{{ formatter.ingredient_entry(ingredient_entry) }}</li>
+            {% endfor %}{% endif %}</ingredient>
+        <recipetext>{% if fields.INSTRUCTIONS in selected_fields and recipe.instructions
+            %}{{ text2li(recipe.instructions) }}{% endif %}</recipetext>
+        <url>{% if fields.URL in selected_fields and recipe.url
+            %}{{ recipe.url }}{% endif %}</url>
+        <imagepath></imagepath>
+        <imageurl></imageurl>
+        <quantity>{% if fields.YIELDS in selected_fields and recipe.yields
+            %}{{ recipe.yields }} {{ recipe.yield_unit_name }}{% endif %}</quantity>
+        <comments>{% if fields.LAST_COOKED in selected_fields and recipe.last_cooked
+            %}<li>{{ formatter.last_cooked(recipe.last_cooked) }}</li>{% endif %}
+            {% if fields.LAST_MODIFIED in selected_fields and recipe.last_modified
+            %}<li>{{ formatter.last_modified(recipe.last_modified) }}</li>{% endif %}
+            {% if fields.NOTES in selected_fields and recipe.notes
+            %}{{ text2li(recipe.notes) }}{% endif %}</comments>
+        <nutrition></nutrition>
+        <lang></lang>
+        <rating>{% if fields.RATING in selected_fields and recipe.rating
+            %}{{ recipe.rating // 2 }}{% else %}{{ 0 }}{% endif %}</rating>
+        <source>{% if fields.AUTHOR in selected_fields and recipe.author
+            %}{{ recipe.author }}{% endif %}</source>
+        <video></video>{% if fields.CATEGORIES in selected_fields %}
+        {% for category in recipe.categories %}<category>{{ category }}</category>
+        {% endfor %}{% endif %}<tag></tag>
+    </recipe>
+    {% endfor %}</cookbook>
