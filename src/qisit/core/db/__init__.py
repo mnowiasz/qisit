@@ -62,13 +62,6 @@ def _set_dialect(dbapi_connection, connection_record):
         # https://docs.sqlalchemy.org/en/13/dialects/sqlite.html#pysqlite-serializable
         dbapi_connection.isolation_level = None
 
-
-@event.listens_for(Engine, "begin")
-def do_begin(conn):
-    #  https://docs.sqlalchemy.org/en/13/dialects/sqlite.html#pysqlite-serializable
-    conn.execute("BEGIN")
-
-
 def get_or_add_item(session_: sql.orm.session, table: Base, name: str, filter_args=None, *args, **kwargs):
     """
     Returns an already existing database object or creates if it's not existing. Useful for importing recipes or

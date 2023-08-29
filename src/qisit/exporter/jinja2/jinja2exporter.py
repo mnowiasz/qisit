@@ -77,7 +77,7 @@ if __name__ == '__main__':
     QtCore.QCoreApplication.setOrganizationDomain("qisit.app")
     QtCore.QCoreApplication.setOrganizationName("qisit")
     QtCore.QCoreApplication.setApplicationName("qisit")
-    QtCore.QCoreApplication.setApplicationVersion("0.8.0_alpha")
+    QtCore.QCoreApplication.setApplicationVersion("0.8.0")
     settings = QtCore.QSettings()
 
     database = settings.value("database")
